@@ -1,0 +1,6 @@
+src/app/code/community/SchumacherFM/PicturePerfect app/code/community/SchumacherFM/PicturePerfect
+src/app/etc/modules/SchumacherFM_PicturePerfect.xml app/etc/modules/SchumacherFM_PicturePerfect.xml
+src/app/locale/en_US/SchumacherFM_PicturePerfect.csv app/locale/en_US/SchumacherFM_PicturePerfect.csv
+src/app/locale/de_DE/SchumacherFM_PicturePerfect.csv app/locale/de_DE/SchumacherFM_PicturePerfect.csv
+src/app/design/adminhtml/default/default/layout/pictureperfect.xml app/design/adminhtml/default/default/layout/pictureperfect.xml
+src/js/pictureperfect js/pictureperfect

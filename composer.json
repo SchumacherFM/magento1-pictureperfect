@@ -1,0 +1,16 @@
+{
+    "name": "schumacherfm/pictureperfect",
+    "type": "magento-module",
+    "license": "BSD-3-Clause",
+    "homepage": "https://github.com/SchumacherFM/Magento-PicturePerfect",
+    "description": "PicturePerfect is a",
+    "authors": [
+        {
+            "name": "Cyrill Schumacher",
+            "email": "cyrill@schumacher.fm"
+        }
+    ],
+    "require": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ /**
+ * @category  SchumacherFM
+ * @package   SchumacherFM_PicturePerfect
+ * @copyright Copyright (c) http://www.schumacher.fm
+ * @author    Cyrill at Schumacher dot fm @SchumacherFM
+ */
+-->
+<config>
+    <acl>
+   		<resources>
+   			<admin>
+   				<children>
+   					<system>
+   						<children>
+   							<config>
+   								<children>
+   									<pictureperfect translate="title" module="schumacherfm_pictureperfect">
+   										<title>PicturePerfect</title>
+   									</pictureperfect>
+   								</children>
+   							</config>
+   						</children>
+   					</system>
+   				</children>
+   			</admin>
+   		</resources>
+   	</acl>
+</config>

@@ -1,0 +1,76 @@
+<?xml version="1.0"?><!--* @category    SchumacherFM_PicturePerfect--><!--* @package     etc--><!--* @author      Cyrill at Schumacher dot fm / @SchumacherFM--><!--* @copyright   Copyright (c)-->
+<config>
+    <modules>
+        <SchumacherFM_PicturePerfect>
+            <version>1.0.0</version>
+        </SchumacherFM_PicturePerfect>
+    </modules>
+
+    <global>
+        <models>
+            <pictureperfect>
+                <class>SchumacherFM_PicturePerfect_Model</class>
+            </pictureperfect>
+        </models>
+        <blocks>
+            <pictureperfect>
+                <class>SchumacherFM_PicturePerfect_Block</class>
+            </pictureperfect>
+        </blocks>
+        <helpers>
+            <pictureperfect>
+                <class>SchumacherFM_PicturePerfect_Helper</class>
+            </pictureperfect>
+        </helpers>
+    </global>
+
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <modules>
+                        <pictureperfect before="Mage_Adminhtml">SchumacherFM_PicturePerfect_Adminhtml</pictureperfect>
+                    </modules>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
+
+    <adminhtml>
+        <layout>
+            <updates>
+                <pictureperfect>
+                    <file>pictureperfect.xml</file>
+                </pictureperfect>
+            </updates>
+        </layout>
+        <translate>
+            <modules>
+                <SchumacherFM_PicturePerfect>
+                    <files>
+                        <default>SchumacherFM_PicturePerfect.csv</default>
+                    </files>
+                </SchumacherFM_PicturePerfect>
+            </modules>
+        </translate>
+        <events>
+
+        </events>
+    </adminhtml>
+    <default>
+        <pictureperfect>
+            <pictureperfect>
+                <enable>1</enable>
+
+            </pictureperfect>
+
+        </pictureperfect>
+    </default>
+    <phpunit>
+        <suite>
+            <modules>
+                <SchumacherFM_PicturePerfect/>
+            </modules>
+        </suite>
+    </phpunit>
+</config>
