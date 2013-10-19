@@ -38,7 +38,10 @@
                 skip: noop,
                 groupstart: noop,
                 groupend: noop,
-                beforestart: noop
+                beforestart: noop,
+                dragenter: noop,
+                dragleave: noop,
+                dragover: noop
             }
         }
     };
@@ -224,13 +227,14 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
-            console.log('enter',e);
+            opts.on.dragenter(e);
         }
 
         function dragleave(e) {
             if (dragClass) {
                 removeClass(dropbox, dragClass);
             }
+            opts.on.dragleave(e);
         }
 
         function dragover(e) {
@@ -239,6 +243,7 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
+            opts.on.dragover(e);
         }
     }
 
