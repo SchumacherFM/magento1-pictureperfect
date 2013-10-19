@@ -224,6 +224,7 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
+            console.log('enter',e);
         }
 
         function dragleave(e) {

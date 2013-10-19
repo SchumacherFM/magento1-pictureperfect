@@ -1,0 +1,42 @@
+/* default style */
+.tagtip {
+    background : #fff;
+    border     : 1px solid #c7c7c7;
+    color      : #505050;
+    padding    : 2px;
+    width      : 200px;
+    text-align : center;
+    z-index    : 999;
+}
+
+.tagtip .title {
+    padding    : 2px;
+    background : #e6e6e6;
+}
+
+.tagtip .content {
+    padding : 2px 2px 0px 2px;
+}
+
+.fReaderDrag td {
+    font-style       : italic;
+    background-color : coral;
+}
+
+.fReaderProgress {
+    background-image    : url("images/rule-ajax-loader.gif");
+    background-repeat   : no-repeat;
+    background-position : left top;
+}
+
+.fReaderSuccess {
+    background-image    : url("images/success_msg_icon.gif");
+    background-repeat   : no-repeat;
+    background-position : left top;
+}
+
+.fReaderError {
+    background-image    : url("images/error_msg_icon.gif");
+    background-repeat   : no-repeat;
+    background-position : left top;
+}
