@@ -243,7 +243,7 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
-            opts.on.dragover(e);
+//            opts.on.dragover(e);
         }
     }
 

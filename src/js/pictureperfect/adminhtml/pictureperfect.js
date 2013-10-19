@@ -150,6 +150,14 @@
             },
             readAsDefault: 'BinaryString',
             on: {
+
+                dragenter: function (event) {
+                    console.log('dragenter', event);
+                },
+                dragleave: function (event) {
+                    console.log('dragleave', event);
+                },
+
                 beforestart: function () {
                     secondTd.removeClassName('fReaderError');
                     secondTd.removeClassName('fReaderSuccess');
