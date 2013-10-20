@@ -21,8 +21,8 @@ var Tagtip = Class.create({
         this.options = $H({
             align: 'topMiddle',
             hideTrigger: 'mouseout',
-            offsetx: 0,
-            offsety: 8,
+            offsetx: 25,
+            offsety: 0,
             parent: null,
             showTrigger: 'mouseover',
             style: 'default',
@@ -31,11 +31,8 @@ var Tagtip = Class.create({
         });
         this.options.update(options);
 
-
         this.align = this.options.get('align');
-        this.appearEffect = null;
         this.container = null;
-        this.hideEffect = null;
 
         this.hideTrigger = this.options.get('hideTrigger');
         this.offsetx = this.options.get('offsetx');
@@ -100,10 +97,6 @@ var Tagtip = Class.create({
 
         if (this._isInitialized === true) {
             return false;
-        }
-
-        if (this.hideEffect) {
-            this.hideEffect.cancel();
         }
 
         // reset position
@@ -176,32 +169,11 @@ var Tagtip = Class.create({
             offsetTop: tipPosY
         });
 
-        this.appearEffect = new Effect.Appear(this.container, {
-            duration: 0,
-            from: 0,
-            to: 1.0,
-            transition: Effect.Transitions.sinoidal,
-            queue: {scope: 'fadeovers', position: 'end'},
-            afterFinish: function () {
-                this.beingShown = false;
-                this.shown = true;
-
-                this.trigger.fire("tagtip:shown", { tipid: this.container.identify() });
-            }.bind(this)
-        });
         return false;
     },
 
     hideMenu: function (event) {
-        if (this.appearEffect) {
-            this.appearEffect.cancel();
-        }
-        this.hideEffect = Effect.DropOut(this.container, {
-            afterFinish: function () {
-                this.shown = false;
-                this.trigger.fire("tagtip:hidden", { tipid: this.container.identify() });
-            }.bind(this)
-        });
+        this.container.hide();
         return false;
     },
 

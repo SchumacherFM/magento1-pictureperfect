@@ -1,22 +1,29 @@
 /* default style */
 .tagtip {
-    background : #fff;
-    border     : 1px solid coral;
+    background : white;
+    border     : 1px solid black;
     color      : #505050;
-    padding    : 2px;
-    width      : 300px;
+    padding    : 0;
+    width      : 350px;
     text-align : center;
     z-index    : 999;
+    min-height : 110px;
 }
 
 .tagtip .title {
-    padding    : 2px;
-    background : #e6e6e6;
+    padding    : 3px;
+    background : lightgreen;
 }
 
 .tagtip .content {
-    padding : 2px 2px 0px 2px;
-    text-align: left;
+    padding    : 3px;
+    text-align : left;
+}
+
+.tagtip .content img {
+    width  : 60px;
+    float  : left;
+    margin : 0 3px 3px 0;
 }
 
 .fReaderDrag td {

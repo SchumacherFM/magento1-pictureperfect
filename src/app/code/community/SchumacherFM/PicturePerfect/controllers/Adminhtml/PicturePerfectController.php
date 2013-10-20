@@ -31,9 +31,10 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         $helper = Mage::helper('pictureperfect');
 
         $return = array(
-            'err' => TRUE,
-            'msg' => $helper->__('An error occurred.'),
-            'fn'  => '',
+            'err'    => TRUE,
+            'msg'    => $helper->__('An error occurred.'),
+            'fn'     => '',
+            'images' => FALSE
         );
 
         $productId = (int)$this->getRequest()->getParam('productId', 0);
@@ -42,7 +43,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         $product    = Mage::getModel('catalog/product')->load($productId);
         $binaryData = base64_decode($this->getRequest()->getParam('binaryData', ''));
         $file       = json_decode($this->getRequest()->getParam('file', '[]'), TRUE);
-        $fileName   = preg_replace('~[^\w\.]+~i', '', isset($file['name']) ? $file['name'] : '');
+        $fileName   = preg_replace('~[^\w\.\-_\(\)@#]+~i', '', isset($file['name']) ? $file['name'] : '');
 
         if (empty($fileName) || empty($binaryData) || empty($file) || empty($productId)) {
             $return['msg'] = $helper->__('Either fileName or binaryData or file is empty ...');
@@ -62,6 +63,18 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         try {
             $product->addImageToMediaGallery($this->_getTempStorage() . $fileName, NULL, TRUE, FALSE);
             $product->getResource()->save($product); // bypassing observer
+
+            $return['images'] = array();
+            $images           = $product->getMediaGalleryImages();
+            foreach ($images as $image) {
+                $image->unsPath();
+                $image->unsId();
+                $image->unsValueId();
+                $image->setResized(
+                    (string)Mage::helper('catalog/image')->init($product, 'thumbnail', $image->getFile())->resize(60)
+                );
+                $return['images'][] = $image->toArray();
+            }
         } catch (Exception $e) {
             $return['err'] = TRUE;
             $return['msg'] = $helper->__('Error in saving the image: %s for productId: %s', $fileName, $productId);

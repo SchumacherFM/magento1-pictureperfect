@@ -52,7 +52,6 @@
     function PicturePerfect() {
         var self = this;
         self._globalConfig = {};
-        self._toProductIdAddedFiles = [];
         self._tagTipCollection = {};
         return this;
     }
@@ -122,12 +121,10 @@
      * @returns {Tagtip}
      * @private
      */
-    PicturePerfect.prototype._getTagTip = function (event) {
+    PicturePerfect.prototype._getTagTip = function (event, productId) {
         var _tipOptions = {
-            showDelay: 1,
-            hideDelay: 10,
             align: 'topLeft',
-            title: 'Current Uploads'
+            title: 'Media Gallery for ID: ' + productId
         };
         return new Tagtip(event.target.parentNode, 'Waiting for upload ...', _tipOptions);
     };
@@ -138,17 +135,21 @@
      * @param file {}
      * @param currentIndex int
      * @param productId int
+     * @param images []
      * @returns {*}
      * @private
      */
-    PicturePerfect.prototype._updateTagTip = function (event, file, currentIndex, productId) {
-        var self = this;
+    PicturePerfect.prototype._updateTagTip = function (event, file, currentIndex, images) {
+        var self = this,
+            content = '';
 
-        if (undefined === self._toProductIdAddedFiles[productId]) { // init Array
-            self._toProductIdAddedFiles[productId] = [];
-        }
-        self._toProductIdAddedFiles[productId].push(file.name + ' (' + file.extra.prettySize + ')'); // tagTip content
-        self._tagTipCollection[currentIndex].setContent(self._toProductIdAddedFiles[productId].join('<br>'));
+        content += 'Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
+
+        images.forEach(function (image, index) {
+            content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
+        });
+
+        self._tagTipCollection[currentIndex].setContent(content);
         self._tagTipCollection[currentIndex]._isInitialized = false;
         self._tagTipCollection[currentIndex].showMenu(event);
         return this;
@@ -216,8 +217,7 @@
                     }
                     currentIndex = index;
                     if (undefined === self._tagTipCollection[currentIndex]) {
-                        self._tagTipCollection[currentIndex] = self._getTagTip(event);
-                        console.log(self._tagTipCollection[currentIndex]);
+                        self._tagTipCollection[currentIndex] = self._getTagTip(event, productId);
                     }
                     if (false === self._tagTipCollection[currentIndex]._isInitialized) {
                         self._tagTipCollection[currentIndex].showMenu(event);
@@ -244,9 +244,9 @@
                                     secondTd.removeClassName('fReaderError');
                                     secondTd.addClassName('fReaderSuccess');
 
-                                    console.log(result);
+                                    console.log('Upload result: ', result);
 
-                                    self._updateTagTip(event, file, currentIndex, productId);
+                                    self._updateTagTip(event, file, currentIndex, result.images);
                                 } else {
                                     alert('An error occurred:\n' + result.msg);
                                     secondTd.addClassName('fReaderError');
