@@ -4,7 +4,7 @@
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
  * @copyright   Copyright (c)
  */
-/*global $,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,encode_base64,reMarked*/
+/*global $,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,encode_base64,Tagtip*/
 ;
 (function () {
     'use strict';
@@ -52,6 +52,8 @@
     function PicturePerfect() {
         var self = this;
         self._globalConfig = {};
+        self._toProductIdAddedFiles = [];
+        self._tagTipCollection = {};
         return this;
     }
 
@@ -116,6 +118,44 @@
 
     /**
      *
+     * @param event
+     * @returns {Tagtip}
+     * @private
+     */
+    PicturePerfect.prototype._getTagTip = function (event) {
+        var _tipOptions = {
+            showDelay: 1,
+            hideDelay: 10,
+            align: 'topLeft',
+            title: 'Current Uploads'
+        };
+        return new Tagtip(event.target.parentNode, 'Waiting for upload ...', _tipOptions);
+    };
+
+    /**
+     *
+     * @param event {}
+     * @param file {}
+     * @param currentIndex int
+     * @param productId int
+     * @returns {*}
+     * @private
+     */
+    PicturePerfect.prototype._updateTagTip = function (event, file, currentIndex, productId) {
+        var self = this;
+
+        if (undefined === self._toProductIdAddedFiles[productId]) { // init Array
+            self._toProductIdAddedFiles[productId] = [];
+        }
+        self._toProductIdAddedFiles[productId].push(file.name + ' (' + file.extra.prettySize + ')'); // tagTip content
+        self._tagTipCollection[currentIndex].setContent(self._toProductIdAddedFiles[productId].join('<br>'));
+        self._tagTipCollection[currentIndex]._isInitialized = false;
+        self._tagTipCollection[currentIndex].showMenu(event);
+        return this;
+    };
+
+    /**
+     *
      * @param element
      * @param productId
      * @returns {*}
@@ -126,7 +166,8 @@
         var
             self = this,
             options = {},
-            secondTd = element.select('td');
+            secondTd = element.select('td'),
+            currentIndex = '';
 
         secondTd = secondTd[1] || {};
 
@@ -142,6 +183,22 @@
             return console.log('FileReader upload url not available!');
         }
 
+        /**
+         *
+         * @param event
+         * @returns {string}
+         * @private
+         */
+        function _getIndex(event) {
+            var target = event.srcElement || event.target,
+                row = target.parentNode,
+                ri = parseInt(row.rowIndex || -1, 10);
+            if (ri > -1) {
+                return ri;
+            }
+            return false;
+        }
+
         options = {
             dragClass: 'fReaderDrag',
             accept: 'image/*',
@@ -152,10 +209,24 @@
             on: {
 
                 dragenter: function (event) {
-                    console.log('dragenter', event);
+                    var index = _getIndex(event);
+
+                    if (false === index) {
+                        return;
+                    }
+                    currentIndex = index;
+                    if (undefined === self._tagTipCollection[currentIndex]) {
+                        self._tagTipCollection[currentIndex] = self._getTagTip(event);
+                        console.log(self._tagTipCollection[currentIndex]);
+                    }
+                    if (false === self._tagTipCollection[currentIndex]._isInitialized) {
+                        self._tagTipCollection[currentIndex].showMenu(event);
+                    }
                 },
                 dragleave: function (event) {
-                    console.log('dragleave', event);
+                    if (undefined !== self._tagTipCollection[currentIndex]) {
+                        self._tagTipCollection[currentIndex].hideMenu(event);
+                    }
                 },
 
                 beforestart: function () {
@@ -163,7 +234,7 @@
                     secondTd.removeClassName('fReaderSuccess');
                     secondTd.addClassName('fReaderProgress');
                 },
-                load: function (e, file) {
+                load: function (event, file) {
 
                     var ar = new Ajax.Request(self._globalConfig.uploadUrl, {
                         onSuccess: function (response) {
@@ -172,7 +243,10 @@
                                 if (result.err === false) {
                                     secondTd.removeClassName('fReaderError');
                                     secondTd.addClassName('fReaderSuccess');
+
                                     console.log(result);
+
+                                    self._updateTagTip(event, file, currentIndex, productId);
                                 } else {
                                     alert('An error occurred:\n' + result.msg);
                                     secondTd.addClassName('fReaderError');
@@ -189,7 +263,7 @@
                         method: 'post',
                         parameters: {
                             'productId': productId,
-                            'binaryData': encode_base64(e.target.result),
+                            'binaryData': encode_base64(event.target.result),
                             'file': JSON.stringify(file)
                         },
                         loaderArea: false
