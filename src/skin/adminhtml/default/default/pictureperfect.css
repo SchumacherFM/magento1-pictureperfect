@@ -1,10 +1,10 @@
 /* default style */
 .tagtip {
     background : #fff;
-    border     : 1px solid #c7c7c7;
+    border     : 1px solid coral;
     color      : #505050;
     padding    : 2px;
-    width      : 200px;
+    width      : 300px;
     text-align : center;
     z-index    : 999;
 }
@@ -16,6 +16,7 @@
 
 .tagtip .content {
     padding : 2px 2px 0px 2px;
+    text-align: left;
 }
 
 .fReaderDrag td {

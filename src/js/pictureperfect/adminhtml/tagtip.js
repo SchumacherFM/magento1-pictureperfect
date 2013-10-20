@@ -12,20 +12,18 @@
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
  * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
  * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * Heavily Modified by Cyrill at Schumacher dot fm 2013
  */
 
 var Tagtip = Class.create({
     initialize: function (trigger, content, options) {
         this.options = $H({
-            ajax: null,
-            ajaxRefresh: true,
             align: 'topMiddle',
-            hideDelay: .5,
             hideTrigger: 'mouseout',
             offsetx: 0,
             offsety: 8,
             parent: null,
-            showDelay: .5,
             showTrigger: 'mouseover',
             style: 'default',
             target: null,
@@ -33,40 +31,38 @@ var Tagtip = Class.create({
         });
         this.options.update(options);
 
-        this.ajax = this.options.get('ajax');
-        this.ajaxRefresh = this.options.get('ajaxRefresh');
+
         this.align = this.options.get('align');
         this.appearEffect = null;
         this.container = null;
         this.hideEffect = null;
-        this.hideDelay = this.options.get('hideDelay') * 1000;
-        this.hideDelayTimer = null;
+
         this.hideTrigger = this.options.get('hideTrigger');
         this.offsetx = this.options.get('offsetx');
         this.offsety = this.options.get('offsety');
         this.parent = this.options.get('parent');
-        this.showDelay = this.options.get('showDelay') * 1000;
-        this.showDelayTimer = null;
         this.shown = false;
         this.showTrigger = this.options.get('showTrigger');
         this.style = this.options.get('style');
         this.target = this.options.get('target');
 
-        if ($(content) != undefined)
+        if ($(content) && $(content) !== null) {
             this.text = $(content).innerHTML;
-        else
+        } else {
             this.text = content;
-        this.tipFetched = false; // is tip content already fetched via ajax
+        }
+
         this.title = this.options.get('title');
         this.trigger = $(trigger);
+        this._isInitialized = true;
 
         this.buildTip();
         this.addObservers();
     },
 
     buildTip: function () {
-        container = new Element('div', { 'class': 'tagtip ' + this.style });
-        content = new Element('div', { 'class': 'content' });
+        var container = new Element('div', { 'class': 'tagtip ' + this.style }),
+            content = new Element('div', { 'class': 'content' });
 
         if (this.title) {
             title = new Element('div', { 'class': 'title' });
@@ -75,11 +71,11 @@ var Tagtip = Class.create({
         }
 
         container.insert(content);
-        if (this.parent)
+        if (this.parent) {
             $(this.parent).insert(container);
-        else
+        } else {
             document.body.insert(container);
-
+        }
         this.container = container;
         this.content = content;
 
@@ -93,25 +89,22 @@ var Tagtip = Class.create({
     },
 
     addObservers: function () {
-        this.trigger.observe(this.showTrigger, this.showDelayed.bindAsEventListener(this, "trigger"));
-        this.trigger.observe(this.hideTrigger, this.hideDelayed.bindAsEventListener(this));
-        this.container.observe(this.showTrigger, this.showDelayed.bindAsEventListener(this));
-        this.container.observe(this.hideTrigger, this.hideDelayed.bindAsEventListener(this));
-    },
-
-    showDelayed: function (event, whoCalled) {
-        if (this.hideDelayTimer) clearTimeout(this.hideDelayTimer);
-        clearTimeout(this.showDelayTimer);
-        if (this.shown) {
-            if (whoCalled == "trigger")
-                this.hideDelayed();
-        } else
-            this.showDelayTimer = setTimeout(this.showMenu.bind(this), this.showDelay);
+        this.trigger.observe(this.showTrigger, this.showMenu.bindAsEventListener(this));
+        this.trigger.observe(this.hideTrigger, this.hideMenu.bindAsEventListener(this));
     },
 
     showMenu: function (event) {
-        if (this.hideEffect)
+        var target = {},
+            tipPosX = 0,
+            tipPosY = 0;
+
+        if (this._isInitialized === true) {
+            return false;
+        }
+
+        if (this.hideEffect) {
             this.hideEffect.cancel();
+        }
 
         // reset position
         this.container.setStyle({
@@ -120,55 +113,58 @@ var Tagtip = Class.create({
         });
 
         // set target
-        if (this.target) target = this.target;
-        else target = this.trigger;
+        if (this.target) {
+            target = this.target;
+        } else {
+            target = this.trigger;
+        }
 
         // align
-        if (this.align == 'topLeft') {
+        if (this.align === 'topLeft') {
             tipPosX = 0;
             tipPosY = -(this.container.getHeight() + this.offsety);
         }
-        if (this.align == 'topMiddle') {
+        if (this.align === 'topMiddle') {
             tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2;
             tipPosY = -(this.container.getHeight() + this.offsety);
         }
-        if (this.align == 'topRight') {
+        if (this.align === 'topRight') {
             tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2 + (this.trigger.getWidth() / 2 - this.container.getWidth() / 2);
             tipPosY = -(this.container.getHeight() + this.offsety);
         }
-        if (this.align == 'rightTop') {
+        if (this.align === 'rightTop') {
             tipPosX = this.trigger.getWidth() + this.offsetx;
             tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 - (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
         }
-        if (this.align == 'rightMiddle') {
+        if (this.align === 'rightMiddle') {
             tipPosX = this.trigger.getWidth() + this.offsetx;
             tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2;
         }
-        if (this.align == 'rightBottom') {
+        if (this.align === 'rightBottom') {
             tipPosX = this.trigger.getWidth() + this.offsetx;
             tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 + (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
         }
-        if (this.align == 'bottomLeft') {
+        if (this.align === 'bottomLeft') {
             tipPosX = 0 + this.offsetx;
             tipPosY = this.trigger.getHeight() + this.offsety;
         }
-        if (this.align == 'bottomMiddle') {
+        if (this.align === 'bottomMiddle') {
             tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2 + this.offsetx;
             tipPosY = this.trigger.getHeight() + this.offsety;
         }
-        if (this.align == 'bottomRight') {
+        if (this.align === 'bottomRight') {
             tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2 + (this.trigger.getWidth() / 2 - this.container.getWidth() / 2);
             tipPosY = this.trigger.getHeight() + this.offsety;
         }
-        if (this.align == 'leftTop') {
+        if (this.align === 'leftTop') {
             tipPosX = -this.container.getWidth() + this.offsetx;
             tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 - (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
         }
-        if (this.align == 'leftMiddle') {
+        if (this.align === 'leftMiddle') {
             tipPosX = -this.container.getWidth() + this.offsetx;
             tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2;
         }
-        if (this.align == 'leftBottom') {
+        if (this.align === 'leftBottom') {
             tipPosX = -this.container.getWidth() + this.offsetx;
             tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 + (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
         }
@@ -189,9 +185,7 @@ var Tagtip = Class.create({
             afterFinish: function () {
                 this.beingShown = false;
                 this.shown = true;
-                // Here different things when tip is shown, ajax content, etc.
-                if (this.ajax && !this.tipFetched)
-                    this.getContent();
+
                 this.trigger.fire("tagtip:shown", { tipid: this.container.identify() });
             }.bind(this)
         });
@@ -199,9 +193,9 @@ var Tagtip = Class.create({
     },
 
     hideMenu: function (event) {
-        if (this.appearEffect)
+        if (this.appearEffect) {
             this.appearEffect.cancel();
-        this.hideDelayTimer = null;
+        }
         this.hideEffect = Effect.DropOut(this.container, {
             afterFinish: function () {
                 this.shown = false;
@@ -211,30 +205,7 @@ var Tagtip = Class.create({
         return false;
     },
 
-    hideDelayed: function (event) {
-        clearTimeout(this.showDelayTimer);
-        if (this.hideDelayTimer) clearTimeout(this.hideDelayTimer);
-        this.hideDelayTimer = setTimeout(this.hideMenu.bind(this), this.hideDelay);
-    },
-
     setContent: function (text) {
         this.content.update(text);
-    },
-
-    getContent: function () {
-        new Ajax.Request(this.ajax.url, {
-                method: this.ajax.method,
-                parameters: this.ajax.parameters,
-                onCreate: function () {
-                    this.content.update('...');
-                }.bind(this),
-                onComplete: this.ajax.onComplete,
-                onSuccess: function (transport) {
-                    this.content.update(transport.responseText);
-                    if (!this.ajaxRefresh)
-                        this.tipFetched = true;
-                }.bind(this)
-            }
-        );
     }
 });
