@@ -53,6 +53,7 @@
         var self = this;
         self._globalConfig = {};
         self._tagTipCollection = {};
+        self._tableColumnCount = 10;
         return this;
     }
 
@@ -110,23 +111,29 @@
     PicturePerfect.prototype._initFileReaderOnTableRows = function () {
         var self = this;
         $$('#productGrid_table tbody tr').each(function (element, index) {
-            var checkBox = element.select('.massaction-checkbox');
-            self._createFileReaderInstance(element, (checkBox[0] || {value: 0}).value);
+            if (index === 0) {
+                self._tableColumnCount = element.cells.length || 10;
+            }
+            var checkBox = element.select('.massaction-checkbox'),
+                productId = (checkBox[0] || {value: 0}).value;
+            element.writeAttribute('data-pid', productId);
+            self._createFileReaderInstance(element, productId);
         });
     };
 
     /**
      *
-     * @param event
+     * @param trElement
      * @returns {Tagtip}
      * @private
      */
-    PicturePerfect.prototype._getTagTip = function (event, productId) {
-        var _tipOptions = {
-            align: 'topLeft',
-            title: 'Media Gallery for ID: ' + productId
-        };
-        return new Tagtip(event.target.parentNode, 'Waiting for upload ...', _tipOptions);
+    PicturePerfect.prototype._getTagTip = function (trElement, productId) {
+        var self = this,
+            _tipOptions = {
+                columnCount: self._tableColumnCount,
+                productId: productId
+            };
+        return new Tagtip(trElement, 'Waiting for upload ...', _tipOptions);
     };
 
     /**
@@ -136,14 +143,15 @@
      * @param currentIndex int
      * @param productId int
      * @param images []
+     * @param productId int
      * @returns {*}
      * @private
      */
-    PicturePerfect.prototype._updateTagTip = function (event, file, currentIndex, images) {
+    PicturePerfect.prototype._updateTagTip = function (event, file, currentIndex, images, productId) {
         var self = this,
             content = '';
 
-        content += 'Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
+        content += 'PID: ' + productId + '; Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
 
         images.forEach(function (image, index) {
             content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
@@ -157,27 +165,27 @@
 
     /**
      *
-     * @param element
+     * @param trElement current TR
      * @param productId
      * @returns {*}
      * @private
      */
-    PicturePerfect.prototype._createFileReaderInstance = function (element, productId) {
+    PicturePerfect.prototype._createFileReaderInstance = function (trElement, productId) {
         productId = parseInt(productId, 10);
         var
             self = this,
             options = {},
-            secondTd = element.select('td'),
+            secondTd = trElement.select('td'),
             currentIndex = '';
 
-        secondTd = secondTd[1] || {};
+        secondTd = secondTd[1] || {}; // used for the icons to place them in the background
 
         if (undefined === encode_base64) {
             return console.log('FileReader not available because method encode_base64() is missing!');
         }
 
         if (0 === productId) {
-            return console.log('productId is 0 cannot instantiate fileReader', element);
+            return console.log('productId is 0 cannot instantiate fileReader', trElement);
         }
 
         if (false === self._globalConfig.uploadUrl) {
@@ -193,11 +201,10 @@
         function _getIndex(event) {
             var target = event.srcElement || event.target,
                 row = target.parentNode,
-                ri = parseInt(row.rowIndex || -1, 10);
-            if (ri > -1) {
-                return ri;
-            }
-            return false;
+                ri = parseInt(row.rowIndex || -1, 10),
+                productId = parseInt(row.readAttribute('data-pid') || 0, 10);
+
+            return productId > 0 && ri > -1 ? productId : false;
         }
 
         options = {
@@ -217,7 +224,7 @@
                     }
                     currentIndex = index;
                     if (undefined === self._tagTipCollection[currentIndex]) {
-                        self._tagTipCollection[currentIndex] = self._getTagTip(event, productId);
+                        self._tagTipCollection[currentIndex] = self._getTagTip(trElement, productId);
                     }
                     if (false === self._tagTipCollection[currentIndex]._isInitialized) {
                         self._tagTipCollection[currentIndex].showMenu(event);
@@ -246,7 +253,7 @@
 
                                     console.log('Upload result: ', result);
 
-                                    self._updateTagTip(event, file, currentIndex, result.images);
+                                    self._updateTagTip(event, file, currentIndex, result.images, productId);
                                 } else {
                                     alert('An error occurred:\n' + result.msg);
                                     secondTd.addClassName('fReaderError');
@@ -282,7 +289,7 @@
                 }
             }
         };
-        FileReaderJS.setupDrop(element, options);
+        FileReaderJS.setupDrop(trElement, options);
     };
 
     var pp = new PicturePerfect();

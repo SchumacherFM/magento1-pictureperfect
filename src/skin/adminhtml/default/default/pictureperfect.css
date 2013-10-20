@@ -4,15 +4,7 @@
     border     : 1px solid black;
     color      : #505050;
     padding    : 0;
-    width      : 350px;
-    text-align : center;
-    z-index    : 999;
-    min-height : 110px;
-}
-
-.tagtip .title {
-    padding    : 3px;
-    background : lightgreen;
+    text-align : left;
 }
 
 .tagtip .content {

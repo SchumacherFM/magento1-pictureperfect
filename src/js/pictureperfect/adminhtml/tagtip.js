@@ -15,33 +15,31 @@
  *
  * Heavily Modified by Cyrill at Schumacher dot fm 2013
  */
-
+/*global Element,$H,$,$$,Class*/
 var Tagtip = Class.create({
     initialize: function (trigger, content, options) {
         this.options = $H({
-            align: 'topMiddle',
             hideTrigger: 'mouseout',
             offsetx: 25,
             offsety: 0,
-            parent: null,
+            columnCount: 10,
             showTrigger: 'mouseover',
-            style: 'default',
             target: null,
-            title: null
+            title: null,
+            productId: 0
         });
         this.options.update(options);
 
-        this.align = this.options.get('align');
         this.container = null;
 
         this.hideTrigger = this.options.get('hideTrigger');
         this.offsetx = this.options.get('offsetx');
         this.offsety = this.options.get('offsety');
-        this.parent = this.options.get('parent');
         this.shown = false;
+        this.columnCount = this.options.get('columnCount');
         this.showTrigger = this.options.get('showTrigger');
-        this.style = this.options.get('style');
         this.target = this.options.get('target');
+        this.productId = this.options.get('productId');
 
         if ($(content) && $(content) !== null) {
             this.text = $(content).innerHTML;
@@ -50,7 +48,7 @@ var Tagtip = Class.create({
         }
 
         this.title = this.options.get('title');
-        this.trigger = $(trigger);
+        this.trigger = trigger;
         this._isInitialized = true;
 
         this.buildTip();
@@ -58,21 +56,16 @@ var Tagtip = Class.create({
     },
 
     buildTip: function () {
-        var container = new Element('div', { 'class': 'tagtip ' + this.style }),
-            content = new Element('div', { 'class': 'content' });
+        var
+            container = new Element('tr', { 'class': 'tagtip', id: 'tip' + this.productId }),
+            content = new Element('td', { 'class': 'content', colspan: this.columnCount - 1 }); // first column removed
 
-        if (this.title) {
-            title = new Element('div', { 'class': 'title' });
-            title.update(this.title);
-            container.insert(title);
-        }
-
+        container.insert(new Element('td').update('&nbsp;'));
         container.insert(content);
-        if (this.parent) {
-            $(this.parent).insert(container);
-        } else {
-            document.body.insert(container);
-        }
+
+
+        this.trigger.insert({after: container});
+
         this.container = container;
         this.content = content;
 
@@ -91,9 +84,6 @@ var Tagtip = Class.create({
     },
 
     showMenu: function (event) {
-        var target = {},
-            tipPosX = 0,
-            tipPosY = 0;
 
         if (this._isInitialized === true) {
             return false;
@@ -101,72 +91,7 @@ var Tagtip = Class.create({
 
         // reset position
         this.container.setStyle({
-            position: "absolute",
-            display: 'block'
-        });
-
-        // set target
-        if (this.target) {
-            target = this.target;
-        } else {
-            target = this.trigger;
-        }
-
-        // align
-        if (this.align === 'topLeft') {
-            tipPosX = 0;
-            tipPosY = -(this.container.getHeight() + this.offsety);
-        }
-        if (this.align === 'topMiddle') {
-            tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2;
-            tipPosY = -(this.container.getHeight() + this.offsety);
-        }
-        if (this.align === 'topRight') {
-            tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2 + (this.trigger.getWidth() / 2 - this.container.getWidth() / 2);
-            tipPosY = -(this.container.getHeight() + this.offsety);
-        }
-        if (this.align === 'rightTop') {
-            tipPosX = this.trigger.getWidth() + this.offsetx;
-            tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 - (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
-        }
-        if (this.align === 'rightMiddle') {
-            tipPosX = this.trigger.getWidth() + this.offsetx;
-            tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2;
-        }
-        if (this.align === 'rightBottom') {
-            tipPosX = this.trigger.getWidth() + this.offsetx;
-            tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 + (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
-        }
-        if (this.align === 'bottomLeft') {
-            tipPosX = 0 + this.offsetx;
-            tipPosY = this.trigger.getHeight() + this.offsety;
-        }
-        if (this.align === 'bottomMiddle') {
-            tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2 + this.offsetx;
-            tipPosY = this.trigger.getHeight() + this.offsety;
-        }
-        if (this.align === 'bottomRight') {
-            tipPosX = this.trigger.getWidth() / 2 - this.container.getWidth() / 2 + (this.trigger.getWidth() / 2 - this.container.getWidth() / 2);
-            tipPosY = this.trigger.getHeight() + this.offsety;
-        }
-        if (this.align === 'leftTop') {
-            tipPosX = -this.container.getWidth() + this.offsetx;
-            tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 - (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
-        }
-        if (this.align === 'leftMiddle') {
-            tipPosX = -this.container.getWidth() + this.offsetx;
-            tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2;
-        }
-        if (this.align === 'leftBottom') {
-            tipPosX = -this.container.getWidth() + this.offsetx;
-            tipPosY = this.trigger.getHeight() / 2 - this.container.getHeight() / 2 + (this.trigger.getHeight() / 2 - this.container.getHeight() / 2);
-        }
-
-        this.container.clonePosition(target, {
-            setWidth: false,
-            setHeight: false,
-            offsetLeft: tipPosX,
-            offsetTop: tipPosY
+            display: 'table-row'
         });
 
         return false;
