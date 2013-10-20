@@ -4,7 +4,7 @@
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
  * @copyright   Copyright (c)
  */
-/*global $,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,encode_base64,Tagtip*/
+/*global $,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,Tagtip*/
 ;
 (function () {
     'use strict';
@@ -101,7 +101,30 @@
         return function ppDomLoaded() {
             self._initConfig();
             self._initFileReaderOnTableRows();
+            self._initMassActionSelect();
         };
+    };
+
+    /**
+     *
+     * @private
+     */
+    PicturePerfect.prototype._initMassActionSelect = function () {
+        $('productGrid_massaction-select')
+            .insert(new Element('option', {value: 'loadGalleryImages'}).update('Load Gallery Images'))
+            .observe('change', function (event) {
+                if (event.target.value === 'loadGalleryImages') {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    $$('input[class~="massaction-checkbox"]').each(function (element) {
+                        if (true === element.checked) {
+                            console.log(element.value, element.checked);
+                            // @todo loadGallery images from server
+                        }
+                    });
+                }
+            });
     };
 
     /**
