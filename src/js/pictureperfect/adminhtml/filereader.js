@@ -227,14 +227,14 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
-            opts.on.dragenter(e);
+            instanceOptions.on.dragenter(e);
         }
 
         function dragleave(e) {
             if (dragClass) {
                 removeClass(dropbox, dragClass);
             }
-            opts.on.dragleave(e);
+            instanceOptions.on.dragleave(e);
         }
 
         function dragover(e) {
@@ -243,7 +243,7 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
-//            opts.on.dragover(e);
+            instanceOptions.on.dragover(e);
         }
     }
 
