@@ -65,15 +65,11 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             $product->getResource()->save($product); // bypassing observer
 
             $return['images'] = array();
-            $images           = $product->getMediaGalleryImages();
+            $images           = $product->getMediaGallery('images');
+
             foreach ($images as $image) {
-                $image->unsPath();
-                $image->unsId();
-                $image->unsValueId();
-                $image->setResized(
-                    (string)Mage::helper('catalog/image')->init($product, 'thumbnail', $image->getFile())->resize(60)
-                );
-                $return['images'][] = $image->toArray();
+                $image['resized']   = (string)Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
+                $return['images'][] = $image;
             }
         } catch (Exception $e) {
             $return['err'] = TRUE;
