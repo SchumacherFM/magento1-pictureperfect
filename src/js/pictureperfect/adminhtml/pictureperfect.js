@@ -10,6 +10,143 @@
     'use strict';
 
     /**
+     * need my own xhr object ... prototype.js sucks ...
+     *
+     * @param url
+     * @param callBackObject
+     * @constructor
+     */
+    function XhrPost(url, callBackObject) {
+        var self = this;
+        self._xhr = {};
+        self._url = url;
+        self._callbackSuccess = callBackObject.onSuccess || function () {
+        };
+        self._callbackFailure = callBackObject.onFailure || function () {
+        };
+        self._uploadEvents = [
+            'loadstart',
+            'progress',
+            'load',
+            'loadend',
+            'error',
+            'abort',
+            'timeout'
+        ];
+        return this;
+    };
+
+    /**
+     *
+     * @returns {XhrPost}
+     */
+    XhrPost.prototype.initTransport = function () {
+        var self = this;
+        if (XMLHttpRequest !== undefined) {
+            self._xhr = new XMLHttpRequest();
+        }
+        else {
+            var versions = ['MSXML2.XmlHttp.5.0',
+                'MSXML2.XmlHttp.4.0',
+                'MSXML2.XmlHttp.3.0',
+                'MSXML2.XmlHttp.2.0',
+                'Microsoft.XmlHttp'];
+
+            for (var i = 0, len = versions.length; i < len; i++) {
+                try {
+                    self._xhr = new ActiveXObject(versions[i]);
+                    break;
+                }
+                catch (e) {
+                }
+            }
+        }
+        self._xhr.onreadystatechange = function funcOnReadyStateChange(event) {
+            var
+                state = parseInt(self._xhr.readyState, 10),
+                status = parseInt(self._xhr.status, 10),
+                err = null;
+            if (state < 4) {
+//                self._callbackFailure(state * -1, event, self._xhr);
+                return;
+            }
+
+            if (status !== 200) {
+                self._callbackFailure(status * -1, event, self._xhr);
+                return;
+            }
+
+            if (state === 4) {
+                self._callbackSuccess(event, self._xhr);
+                return;
+            }
+        };
+        return this;
+    };
+
+
+    /**
+     *
+     * @param eventName
+     * @param callback
+     */
+    XhrPost.prototype.addUploadEvent = function (eventName, callback) {
+        var self = this;
+        self._uploadEvents.forEach(function (availableEvent) {
+            if (availableEvent === eventName) {
+                self._xhr.upload.addEventListener(eventName, callback);
+                return;
+            }
+        });
+
+    }
+
+    XhrPost.prototype._toQueryString = function (postObject) {
+        function toQueryPair(key, value) {
+            return key + '=' + encodeURIComponent(value);
+        }
+
+        var queryValues = [];
+        for (var key in postObject) {
+            if (postObject.hasOwnProperty(key)) {
+                var value = postObject[key];
+                queryValues.push(toQueryPair(key, value));
+            }
+        }
+        return queryValues.join('&');
+    }
+
+    /**
+     *
+     * @param postData
+     * @returns {*}
+     */
+    XhrPost.prototype.send = function (postData) {
+        var self = this;
+        if (Object.prototype.toString.call(postData) !== '[object Object]') {
+            return console.log('postData is not an object/array', postData);
+        }
+
+        self._xhr.open('post', self._url, true); // 3rd param async === true
+        self._xhr.send(self._toQueryString(postData));
+        return this;
+    };
+
+
+    var ajaxRequest = new XhrPost('http://magento-1-7.local/', {
+        onSuccess: function (event, xhrObj) {
+
+            return console.log('success: ', event);
+        },
+        onFailure: function (state, event, xhr) {
+            return console.log('fail: ', state, event, xhr);
+        }
+    });
+    ajaxRequest.initTransport();
+    ajaxRequest.send({asdasd: 2312312, asdhasd: 234234234});
+//    console.log('ajaxRequest', typeof ajaxRequest, ajaxRequest);
+
+    /**
      *
      * @param str string
      * @returns boolean|string
@@ -70,7 +207,9 @@
         }
 
         self._globalConfig = {
-            uploadUrl: _checkHttp(config.uploadUrl || false)
+            uploadUrl: _checkHttp(config.uploadUrl || false),
+            progressUrl: _checkHttp(config.progressUrl || false),
+            progressName: config.progressName || false
 //            reMarkedCfg: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
         return this;
@@ -188,6 +327,25 @@
 
     /**
      *
+     * @param productId
+     * @returns {*}
+     * @private
+     */
+    PicturePerfect.prototype._getProgressElement = function (productId) {
+        if (false === self._globalConfig.progressUrl) {
+            return false;
+        }
+        var progressElement = new Element('progress', {'id': 'prog' + productId, 'max': 100, 'value': 0});
+//        progressElement.update('<span class="prcnt">0</span>%');
+        return progressElement;
+    };
+
+    PicturePerfect.prototype._intervalProgress = function (productId) {
+
+    };
+
+    /**
+     *
      * @param trElement current TR
      * @param productId
      * @returns {*}
@@ -230,6 +388,7 @@
             return productId > 0 && ri > -1 ? productId : false;
         }
 
+
         options = {
             dragClass: 'fReaderDrag',
             accept: 'image/*',
@@ -263,11 +422,25 @@
                     secondTd.removeClassName('fReaderError');
                     secondTd.removeClassName('fReaderSuccess');
                     secondTd.addClassName('fReaderProgress');
+
+//                    secondTd.insert(progressElement);
                 },
                 load: function (event, file) {
 
-                    var ar = new Ajax.Request(self._globalConfig.uploadUrl, {
-                        onSuccess: function (response) {
+                    var postParams = {
+                        'productId': productId,
+                        'file': JSON.stringify(file),
+                        'binaryData': encode_base64(event.target.result)
+                    };
+
+
+                    var ajaxRequest = new XhrPost(self._globalConfig.uploadUrl, {
+                        onSuccess: function (event, xhrObj) {
+
+                            return console.log('success: ', event);
+
+                            var response = {};
+
                             var result = JSON.parse(response.responseText);
                             if (result && _isObject(result)) {
                                 if (result.err === false) {
@@ -289,15 +462,10 @@
                         },
                         onFailure: function () {
                             secondTd.addClassName('fReaderError');
-                        },
-                        method: 'post',
-                        parameters: {
-                            'productId': productId,
-                            'binaryData': encode_base64(event.target.result),
-                            'file': JSON.stringify(file)
-                        },
-                        loaderArea: false
+                        }
                     });
+                    ajaxRequest.initTransport().send(postParams);
+                    console.log('ajaxRequest', ajaxRequest);
 
                 },
                 error: function (e, file) {

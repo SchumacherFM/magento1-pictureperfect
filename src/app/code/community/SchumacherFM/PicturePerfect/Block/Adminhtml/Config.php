@@ -14,6 +14,12 @@ class SchumacherFM_PicturePerfect_Block_Adminhtml_Config extends Mage_Adminhtml_
     {
         $config              = array();
         $config['uploadUrl'] = $this->getUrl('*/picturePerfect/catalogProductGallery');
+
+        if (TRUE === Mage::helper('pictureperfect')->uploadProgressEnabled()) {
+            $config['progressUrl']  = $this->getUrl('*/picturePerfect/uploadProgress');
+            $config['progressName'] = Mage::helper('pictureperfect')->getUploadProgressName();
+        }
+
         return Zend_Json_Encoder::encode($config);
     }
 

@@ -55,4 +55,22 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     {
         return $this->_getJsonConfig('remarked');
     }
+
+    public function uploadProgressEnabled()
+    {
+        return (int)ini_get('session.upload_progress.enabled') === 1;
+    }
+
+    public function getUploadProgressName()
+    {
+        return ini_get('session.upload_progress.name');
+    }
+
+    public function getUploadProgressSession()
+    {
+        if (FALSE === isset($_POST[$this->getUploadProgressName()])) {
+            return FALSE;
+        }
+        return ini_get('session.upload_progress.prefix') . $_POST[$this->getUploadProgressName()];
+    }
 }
