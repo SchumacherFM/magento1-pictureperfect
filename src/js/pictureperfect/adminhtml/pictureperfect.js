@@ -41,9 +41,10 @@
      * @returns {XhrPost}
      */
     XhrPost.prototype.initTransport = function () {
-        var self = this;
+        var self = this,
+            xhr = {};
         if (XMLHttpRequest !== undefined) {
-            self._xhr = new XMLHttpRequest();
+            xhr = new XMLHttpRequest();
         }
         else {
             var versions = ['MSXML2.XmlHttp.5.0',
@@ -54,33 +55,37 @@
 
             for (var i = 0, len = versions.length; i < len; i++) {
                 try {
-                    self._xhr = new ActiveXObject(versions[i]);
+                    xhr = new ActiveXObject(versions[i]);
                     break;
                 }
                 catch (e) {
                 }
             }
         }
-        self._xhr.onreadystatechange = function funcOnReadyStateChange(event) {
+        xhr.onreadystatechange = function funcOnReadyStateChange(event) {
             var
-                state = parseInt(self._xhr.readyState, 10),
-                status = parseInt(self._xhr.status, 10),
+                state = xhr.readyState,
+                status = xhr.status,
                 err = null;
+
+            console.log(state,status);
+
             if (state < 4) {
 //                self._callbackFailure(state * -1, event, self._xhr);
                 return;
             }
 
             if (status !== 200) {
-                self._callbackFailure(status * -1, event, self._xhr);
+                self._callbackFailure(status * -1, event, xhr);
                 return;
             }
 
             if (state === 4) {
-                self._callbackSuccess(event, self._xhr);
+                self._callbackSuccess(event, xhr);
                 return;
             }
         };
+        self._xhr = xhr;
         return this;
     };
 
