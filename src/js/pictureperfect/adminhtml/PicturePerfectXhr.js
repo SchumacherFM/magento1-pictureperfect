@@ -8,7 +8,6 @@
 ;
 (function () {
     'use strict';
- 
 
     /**
      * need my own xhr object ... prototype.js sucks ...
@@ -17,7 +16,7 @@
      * @param callBackObject
      * @constructor
      */
-    function XhrPost(url, callBackObject) {
+    function PicturePerfectXhr(url, callBackObject) {
         var self = this;
         self._xhr = {};
         self._url = url;
@@ -42,17 +41,17 @@
      *
      * @private
      */
-    XhrPost.prototype._initTransport = function () {
-        var self = this;
-        if (XMLHttpRequest !== undefined) {
-            self._xhr = new XMLHttpRequest();
-        }
-        else {
-            var versions = ['MSXML2.XmlHttp.5.0',
+    PicturePerfectXhr.prototype._initTransport = function () {
+        var self = this,
+            versions = ['MSXML2.XmlHttp.5.0',
                 'MSXML2.XmlHttp.4.0',
                 'MSXML2.XmlHttp.3.0',
                 'MSXML2.XmlHttp.2.0',
                 'Microsoft.XmlHttp'];
+
+        if (XMLHttpRequest !== undefined) {
+            self._xhr = new XMLHttpRequest();
+        } else {
 
             for (var i = 0, len = versions.length; i < len; i++) {
                 try {
@@ -71,7 +70,7 @@
      * @param event
      * @private
      */
-    XhrPost.prototype._onReadyStateChange = function (event) {
+    PicturePerfectXhr.prototype._onReadyStateChange = function (event) {
         var self = this;
 
         if (self._xhr.readyState < 4) {
@@ -95,7 +94,7 @@
      * @param callback
      * @returns {*}
      */
-    XhrPost.prototype.addUploadEvent = function (eventName, callback) {
+    PicturePerfectXhr.prototype.addUploadEvent = function (eventName, callback) {
         var self = this, found = false;
         self._uploadEvents.forEach(function (availableEvent) {
             if (availableEvent === eventName) {
@@ -110,7 +109,7 @@
         return true;
     }
 
-    XhrPost.prototype._toQueryString = function (postObject) {
+    PicturePerfectXhr.prototype._toQueryString = function (postObject) {
         function toQueryPair(key, value) {
             return key + '=' + encodeURIComponent(value);
         }
@@ -130,7 +129,7 @@
      * @param postData
      * @returns {*}
      */
-    XhrPost.prototype.send = function (postData) {
+    PicturePerfectXhr.prototype.send = function (postData) {
         var self = this;
         if (Object.prototype.toString.call(postData) !== '[object Object]') {
             throw new Error('postData is not an object/array', postData);
@@ -141,8 +140,10 @@
         return this;
     };
     //********************************************************************************************
+
+    // dummy testing with huge amount of data !!!
     $('#loadProgress').on('click', function () {
-        var ajaxRequest = new XhrPost('https://author.vg.learnosity.com/app_dev.php/tag/alltags', {
+        var ajaxRequest = new PicturePerfectXhr('https://author.vg.learnosity.com/app_dev.php/tag/alltags', {
             onSuccess: function onSuccess(event, xhrObj) {
                 return console.log('success: ', event);
             },
@@ -153,7 +154,7 @@
             }
         });
 
-        ajaxRequest.addUploadEvent('progress', function (event) {
+        ajaxRequest.addUploadEvent('progress', function (event) { // updates every 50ms
             console.log('progress', event);
             if (event.lengthComputable) {
                 var percentComplete = event.loaded / event.total;
@@ -175,7 +176,8 @@
         ajaxRequest.send(pData);
 
     });
- 
+
+    window.PicturePerfectXhr = PicturePerfectXhr;
 
 }).
     call(function () {

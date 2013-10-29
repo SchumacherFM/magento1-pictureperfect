@@ -3,6 +3,9 @@
  A lightweight wrapper for common FileReader usage.
  Copyright 2012 Brian Grinstead - MIT License.
  See http://github.com/bgrins/filereader.js for documentation.
+
+ added drag* events @SchumacherFM
+
  */
 
 (function (window, document) {

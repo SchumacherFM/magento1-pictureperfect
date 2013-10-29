@@ -4,11 +4,11 @@
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
  * @copyright   Copyright (c)
  */
-/*global $,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,Tagtip*/
+/*global $,window,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,Tagtip,PicturePerfectXhr*/
 ;
 (function () {
     'use strict';
- 
+
     /**
      *
      * @param str string
@@ -22,7 +22,6 @@
         }
         return str;
     }
-
 
     /**
      *
@@ -70,9 +69,7 @@
         }
 
         self._globalConfig = {
-            uploadUrl: _checkHttp(config.uploadUrl || false),
-            progressUrl: _checkHttp(config.progressUrl || false),
-            progressName: config.progressName || false
+            uploadUrl: _checkHttp(config.uploadUrl || false)
 //            reMarkedCfg: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
         return this;
@@ -122,7 +119,7 @@
                     $$('input[class~="massaction-checkbox"]').each(function (element) {
                         if (true === element.checked) {
                             console.log(element.value, element.checked);
-                            // @todo loadGallery images from server
+                            // @todo loadGallery images from server for previewing
                         }
                     });
                 }
@@ -195,16 +192,31 @@
      * @private
      */
     PicturePerfect.prototype._getProgressElement = function (productId) {
-        if (false === self._globalConfig.progressUrl) {
-            return false;
-        }
-        var progressElement = new Element('progress', {'id': 'prog' + productId, 'max': 100, 'value': 0});
-//        progressElement.update('<span class="prcnt">0</span>%');
+        var progressElement = new Element('progress', {'id': 'prog' + productId, 'max': 1, 'value': 0});
+        progressElement.update('0%'); // for older browser ... ? ;-)
         return progressElement;
     };
 
-    PicturePerfect.prototype._intervalProgress = function (productId) {
+    /**
+     * this methods runs every 50ms
+     * @param $progressElement Element
+     * @param percentComplete float
+     * @param productId int ... may not needed
+     * @private
+     */
+    PicturePerfect.prototype._intervalProgress = function ($progressElement, percentComplete, productId) {
+        $progressElement.value = percentComplete;
+        var percentage = Math.round(percentComplete * 100);
+        $progressElement.update(percentage + '%'); // for older browser ... ? ;-)
+    };
 
+    PicturePerfect.prototype._getIndex = function (event) {
+        var target = event.srcElement || event.target,
+            row = target.parentNode,
+            ri = parseInt(row.rowIndex || -1, 10),
+            productId = parseInt(row.readAttribute('data-pid') || 0, 10);
+
+        return productId > 0 && ri > -1 ? productId : false;
     };
 
     /**
@@ -217,40 +229,23 @@
     PicturePerfect.prototype._createFileReaderInstance = function (trElement, productId) {
         productId = parseInt(productId, 10);
         var
-            self = this,
+            cfriSelf = this,
             options = {},
             secondTd = trElement.select('td'),
-            currentIndex = '';
+            currentIndex = '',
+            $progressElement = cfriSelf._getProgressElement();
 
         secondTd = secondTd[1] || {}; // used for the icons to place them in the background
 
         if (undefined === encode_base64) {
+            // @todo check for using: send(Blob) or send(ArrayBuffer)
+            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
             return console.log('FileReader not available because method encode_base64() is missing!');
         }
 
         if (0 === productId) {
             return console.log('productId is 0 cannot instantiate fileReader', trElement);
         }
-
-        if (false === self._globalConfig.uploadUrl) {
-            return console.log('FileReader upload url not available!');
-        }
-
-        /**
-         *
-         * @param event
-         * @returns {string}
-         * @private
-         */
-        function _getIndex(event) {
-            var target = event.srcElement || event.target,
-                row = target.parentNode,
-                ri = parseInt(row.rowIndex || -1, 10),
-                productId = parseInt(row.readAttribute('data-pid') || 0, 10);
-
-            return productId > 0 && ri > -1 ? productId : false;
-        }
-
 
         options = {
             dragClass: 'fReaderDrag',
@@ -262,22 +257,22 @@
             on: {
 
                 dragenter: function (event) {
-                    var index = _getIndex(event);
+                    var index = cfriSelf._getIndex(event);
 
                     if (false === index) {
                         return;
                     }
                     currentIndex = index;
-                    if (undefined === self._tagTipCollection[currentIndex]) {
-                        self._tagTipCollection[currentIndex] = self._getTagTip(trElement, productId);
+                    if (undefined === cfriSelf._tagTipCollection[currentIndex]) {
+                        cfriSelf._tagTipCollection[currentIndex] = cfriSelf._getTagTip(trElement, productId);
                     }
-                    if (false === self._tagTipCollection[currentIndex]._isInitialized) {
-                        self._tagTipCollection[currentIndex].showMenu(event);
+                    if (false === cfriSelf._tagTipCollection[currentIndex]._isInitialized) {
+                        cfriSelf._tagTipCollection[currentIndex].showMenu(event);
                     }
                 },
                 dragleave: function (event) {
-                    if (undefined !== self._tagTipCollection[currentIndex]) {
-                        self._tagTipCollection[currentIndex].hideMenu(event);
+                    if (undefined !== cfriSelf._tagTipCollection[currentIndex]) {
+                        cfriSelf._tagTipCollection[currentIndex].hideMenu(event);
                     }
                 },
 
@@ -286,25 +281,19 @@
                     secondTd.removeClassName('fReaderSuccess');
                     secondTd.addClassName('fReaderProgress');
 
-//                    secondTd.insert(progressElement);
+                    secondTd.insert($progressElement);
                 },
                 load: function (event, file) {
 
-                    var postParams = {
-                        'productId': productId,
-                        'file': JSON.stringify(file),
-                        'binaryData': encode_base64(event.target.result)
-                    };
-
-
-                    var ajaxRequest = new XhrPost(self._globalConfig.uploadUrl, {
+                    var ajaxRequest = new PicturePerfectXhr(cfriSelf._globalConfig.uploadUrl, {
                         onSuccess: function (event, xhrObj) {
+                            var response = event.srcElement || event.target;
 
-                            return console.log('success: ', event);
-
-                            var response = {};
+                            // @todo check here for responseText ...
+                            return console.log('success: ', response);
 
                             var result = JSON.parse(response.responseText);
+
                             if (result && _isObject(result)) {
                                 if (result.err === false) {
                                     secondTd.removeClassName('fReaderError');
@@ -312,7 +301,7 @@
 
                                     console.log('Upload result: ', result);
 
-                                    self._updateTagTip(event, file, currentIndex, result.images, productId);
+                                    cfriSelf._updateTagTip(event, file, currentIndex, result.images, productId);
                                 } else {
                                     alert('An error occurred:\n' + result.msg);
                                     secondTd.addClassName('fReaderError');
@@ -327,8 +316,21 @@
                             secondTd.addClassName('fReaderError');
                         }
                     });
-                    ajaxRequest.initTransport().send(postParams);
-                    console.log('ajaxRequest', ajaxRequest);
+
+                    ajaxRequest.addUploadEvent('progress', function (event) {
+                        if (event.lengthComputable) {
+                            var percentComplete = event.loaded / event.total;
+                            cfriSelf._intervalProgress($progressElement, percentComplete, productId);
+                            console.log('percentComplete:', percentComplete); // now that works fine if limiting local band width
+                        }
+                        // else: Unable to compute progress information since the total size is unknown
+                    });
+                    ajaxRequest.send({
+                        'productId': productId,
+                        'file': JSON.stringify(file),
+                        'binaryData': encode_base64(event.target.result)
+                    });
+
 
                 },
                 error: function (e, file) {

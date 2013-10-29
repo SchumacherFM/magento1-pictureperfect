@@ -23,19 +23,6 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         return $this;
     }
 
-    public function uploadProgressAction()
-    {
-        if (FALSE === Mage::helper('pictureperfect')->uploadProgressEnabled()) {
-            return $this->_setReturn(FALSE, TRUE);
-        }
-
-        $progress = Mage::helper('pictureperfect')->getUploadProgressSession();
-        Zend_Debug::dump($_SESSION);
-        Zend_Debug::dump($_POST);
-
-
-    }
-
     /**
      * @return $this
      */

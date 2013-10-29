@@ -24,7 +24,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      *
      * @return string
      */
-    public function getAdminFileUploadUrl(array $params = NULL)
+    public function getAdminFileUploadUrl(array $params = null)
     {
         return Mage::helper('adminhtml')->getUrl('adminhtml/pictureperfect/fileUpload', $params);
     }
@@ -40,10 +40,10 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $config = trim(Mage::getStoreConfig('pictureperfect/' . $type . '/config'));
         if (empty($config)) {
-            return FALSE;
+            return false;
         }
         $decoded = json_decode($config);
-        return $decoded instanceof stdClass ? rawurlencode($config) : FALSE;
+        return $decoded instanceof stdClass ? rawurlencode($config) : false;
     }
 
     /**
@@ -54,23 +54,5 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     public function getReMarkedConfig()
     {
         return $this->_getJsonConfig('remarked');
-    }
-
-    public function uploadProgressEnabled()
-    {
-        return (int)ini_get('session.upload_progress.enabled') === 1;
-    }
-
-    public function getUploadProgressName()
-    {
-        return ini_get('session.upload_progress.name');
-    }
-
-    public function getUploadProgressSession()
-    {
-        if (FALSE === isset($_POST[$this->getUploadProgressName()])) {
-            return FALSE;
-        }
-        return ini_get('session.upload_progress.prefix') . $_POST[$this->getUploadProgressName()];
     }
 }

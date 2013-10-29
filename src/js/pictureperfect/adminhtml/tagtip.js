@@ -1,22 +1,12 @@
-/**
- * Copyright (c) 2009 Sinisa Drpa. http://www.tagtaxa.com/projects/tagtip/index.php
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files
- * (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge,
- * publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
- * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
- * THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * Heavily Modified by Cyrill at Schumacher dot fm 2013
- */
 /*global Element,$H,$,$$,Class*/
 var Tagtip = Class.create({
+
+    /**
+     *
+     * @param trigger
+     * @param content
+     * @param options
+     */
     initialize: function (trigger, content, options) {
         this.options = $H({
             hideTrigger: 'mouseout',
@@ -35,7 +25,6 @@ var Tagtip = Class.create({
         this.hideTrigger = this.options.get('hideTrigger');
         this.offsetx = this.options.get('offsetx');
         this.offsety = this.options.get('offsety');
-        this.shown = false;
         this.columnCount = this.options.get('columnCount');
         this.showTrigger = this.options.get('showTrigger');
         this.target = this.options.get('target');
@@ -51,11 +40,11 @@ var Tagtip = Class.create({
         this.trigger = trigger;
         this._isInitialized = true;
 
-        this.buildTip();
-        this.addObservers();
+        this._buildTip();
+        this._addObservers();
     },
 
-    buildTip: function () {
+    _buildTip: function () {
         var
             container = new Element('tr', { 'class': 'tagtip', id: 'tip' + this.productId }),
             content = new Element('td', { 'class': 'content', colspan: this.columnCount - 1 }); // first column removed
@@ -78,13 +67,17 @@ var Tagtip = Class.create({
         }
     },
 
-    addObservers: function () {
+    _addObservers: function () {
         this.trigger.observe(this.showTrigger, this.showMenu.bindAsEventListener(this));
         this.trigger.observe(this.hideTrigger, this.hideMenu.bindAsEventListener(this));
     },
 
+    /**
+     *
+     * @param event
+     * @returns {boolean}
+     */
     showMenu: function (event) {
-
         if (this._isInitialized === true) {
             return false;
         }
@@ -97,11 +90,20 @@ var Tagtip = Class.create({
         return false;
     },
 
+    /**
+     *
+     * @param event
+     * @returns {boolean}
+     */
     hideMenu: function (event) {
         this.container.hide();
         return false;
     },
 
+    /**
+     *
+     * @param text
+     */
     setContent: function (text) {
         this.content.update(text);
     }
