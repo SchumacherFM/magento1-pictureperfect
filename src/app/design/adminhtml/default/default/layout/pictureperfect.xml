@@ -3,6 +3,9 @@
     <adminhtml_catalog_product_index>
         <reference name="head">
             <action method="addJs">
+                <script>pictureperfect/adminhtml/PicturePerfectXhr.js</script>
+            </action>
+            <action method="addJs">
                 <script>pictureperfect/adminhtml/filereader.js</script>
             </action>
             <action method="addJs">

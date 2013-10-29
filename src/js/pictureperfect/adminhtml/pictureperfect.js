@@ -287,12 +287,15 @@
 
                     var ajaxRequest = new PicturePerfectXhr(cfriSelf._globalConfig.uploadUrl, {
                         onSuccess: function (event, xhrObj) {
-                            var response = event.srcElement || event.target;
+                            var response = event.srcElement || event.target,
+                                result = {};
 
-                            // @todo check here for responseText ...
-                            return console.log('success: ', response);
+                            try {
+                                result = JSON.parse(response.responseText);
+                            } catch (e) {
+                                return console.log('Invalid responseText in JSON', e, response);
+                            }
 
-                            var result = JSON.parse(response.responseText);
 
                             if (result && _isObject(result)) {
                                 if (result.err === false) {
@@ -321,11 +324,10 @@
                         if (event.lengthComputable) {
                             var percentComplete = event.loaded / event.total;
                             cfriSelf._intervalProgress($progressElement, percentComplete, productId);
-                            console.log('percentComplete:', percentComplete); // now that works fine if limiting local band width
                         }
                         // else: Unable to compute progress information since the total size is unknown
                     });
-                    ajaxRequest.send({
+                    ajaxRequest.sendPost({
                         'productId': productId,
                         'file': JSON.stringify(file),
                         'binaryData': encode_base64(event.target.result)

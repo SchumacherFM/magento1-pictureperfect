@@ -6,7 +6,7 @@
  */
 /*global $,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,Tagtip*/
 ;
-(function () {
+(function (win) {
     'use strict';
 
     /**
@@ -50,12 +50,12 @@
                 'Microsoft.XmlHttp'];
 
         if (XMLHttpRequest !== undefined) {
-            self._xhr = new XMLHttpRequest();
+            self._xhr = new win.XMLHttpRequest();
         } else {
 
             for (var i = 0, len = versions.length; i < len; i++) {
                 try {
-                    self._xhr = new ActiveXObject(versions[i]);
+                    self._xhr = new win.ActiveXObject(versions[i]);
                     break;
                 }
                 catch (e) {
@@ -111,7 +111,7 @@
 
     PicturePerfectXhr.prototype._toQueryString = function (postObject) {
         function toQueryPair(key, value) {
-            return key + '=' + encodeURIComponent(value);
+            return key + '=' + encodeURIComponent(value).replace(/%20/g, '+');
         }
 
         var queryValues = [];
@@ -129,57 +129,20 @@
      * @param postData
      * @returns {*}
      */
-    PicturePerfectXhr.prototype.send = function (postData) {
+    PicturePerfectXhr.prototype.sendPost = function (postData) {
         var self = this;
         if (Object.prototype.toString.call(postData) !== '[object Object]') {
             throw new Error('postData is not an object/array', postData);
         }
 
+        var params = self._toQueryString(postData);
+
         self._xhr.open('post', self._url, true); // 3rd param async === true
-        self._xhr.send(self._toQueryString(postData));
+        self._xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        self._xhr.send(params);
         return this;
     };
-    //********************************************************************************************
 
-    // dummy testing with huge amount of data !!!
-    $('#loadProgress').on('click', function () {
-        var ajaxRequest = new PicturePerfectXhr('https://author.vg.learnosity.com/app_dev.php/tag/alltags', {
-            onSuccess: function onSuccess(event, xhrObj) {
-                return console.log('success: ', event);
-            },
-            onFailure: function onFailure(state, event, xhr) {
-                console.log('fail state: ', state);
-                console.log('fail event: ', event);
-                return console.log('fail xhr: ', xhr);
-            }
-        });
+    win.PicturePerfectXhr = PicturePerfectXhr;
 
-        ajaxRequest.addUploadEvent('progress', function (event) { // updates every 50ms
-            console.log('progress', event);
-            if (event.lengthComputable) {
-                var percentComplete = event.loaded / event.total;
-                console.log('percentComplete:', percentComplete); // now that works fine if limiting local band width
-            } else {
-                // Unable to compute progress information since the total size is unknown
-            }
-        });
-
-        var pData = {};
-        for (var i = 0; i < 100; i = i + 1) {
-            var str = '';
-            for (var j = 0; j < 1000; j = j + 1) {
-                str += Math.random() + '_' + j;
-            }
-            pData['in' + i] = str;
-        }
-
-        ajaxRequest.send(pData);
-
-    });
-
-    window.PicturePerfectXhr = PicturePerfectXhr;
-
-}).
-    call(function () {
-        return this || (typeof window !== 'undefined' ? window : global);
-    }());
+})(window);

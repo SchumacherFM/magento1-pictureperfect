@@ -24,7 +24,7 @@ class SchumacherFM_PicturePerfect_Block_Adminhtml_Config extends Mage_Adminhtml_
      */
     protected function _toHtml()
     {
-        return '<div style="display:none;" id="picturePerfectConfig" data-config=\'' . $this->_getConfig(
-        ) . '\'></div>';
+        return '<div style="display:none;" id="picturePerfectConfig" data-config=\'' .
+        $this->_getConfig() . '\'></div>';
     }
 }
