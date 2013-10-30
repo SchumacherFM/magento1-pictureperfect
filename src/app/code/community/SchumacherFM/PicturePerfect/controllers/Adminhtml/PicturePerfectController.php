@@ -46,6 +46,13 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
 
         if (empty($fileName) || empty($binaryData) || empty($file) || empty($productId)) {
             $return['msg'] = $helper->__('Either fileName or binaryData or file is empty ...');
+            Mage::log(array(
+                'catalogProductGalleryAction',
+                $fileName,
+                empty($binaryData) ? '$binaryData empty' : '$binaryData available',
+                $file,
+                $productId
+            ));
             return $this->_setReturn($return, TRUE);
         }
 
@@ -73,6 +80,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         } catch (Exception $e) {
             $return['err'] = TRUE;
             $return['msg'] = $helper->__('Error in saving the image: %s for productId: %s', $fileName, $productId);
+            Mage::logException($e);
         }
 
         $this->_setReturn($return, TRUE);

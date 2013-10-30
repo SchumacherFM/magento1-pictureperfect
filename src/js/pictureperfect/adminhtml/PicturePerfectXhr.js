@@ -106,9 +106,15 @@
         if (false === found) {
             return console.log('event ' + eventName + ' not found!');
         }
-        return true;
+        return this;
     }
 
+    /**
+     *
+     * @param postObject
+     * @returns {string}
+     * @private
+     */
     PicturePerfectXhr.prototype._toQueryString = function (postObject) {
         function toQueryPair(key, value) {
             return key + '=' + encodeURIComponent(value).replace(/%20/g, '+');

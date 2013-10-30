@@ -192,9 +192,10 @@
      * @returns {*}
      * @private
      */
-    PicturePerfect.prototype._getProgressElement = function (productId) {
-        var progressElement = new Element('progress', {'id': 'prog' + productId, 'max': 1, 'value': 0});
+    PicturePerfect.prototype._getProgressElement = function () {
+        var progressElement = new Element('progress', {'max': 1, 'value': 0});
         progressElement.update('0%'); // for older browser ... ? ;-)
+        progressElement.hide();
         return progressElement;
     };
 
@@ -202,15 +203,20 @@
      * this methods runs every 50ms
      * @param $progressElement Element
      * @param percentComplete float
-     * @param productId int ... may not needed
      * @private
      */
-    PicturePerfect.prototype._intervalProgress = function ($progressElement, percentComplete, productId) {
+    PicturePerfect.prototype._intervalProgress = function ($progressElement, percentComplete) {
         $progressElement.value = percentComplete;
         var percentage = Math.round(percentComplete * 100);
         $progressElement.update(percentage + '%'); // for older browser ... ? ;-)
     };
 
+    /**
+     *
+     * @param event
+     * @returns {Number}
+     * @private
+     */
     PicturePerfect.prototype._getIndex = function (event) {
         var target = event.srcElement || event.target,
             row = target.parentNode,
@@ -218,6 +224,28 @@
             productId = parseInt(row.readAttribute('data-pid') || 0, 10);
 
         return productId > 0 && ri > -1 ? productId : false;
+    };
+
+    /**
+     *
+     * @param secondTd
+     * @param msgObj
+     * @private
+     */
+    PicturePerfect.prototype._handleError = function (secondTd, msgObj) {
+        var self = this;
+
+        if (msgObj.alert) {
+            alert(msgObj.alert);
+        }
+
+        secondTd.addClassName('fReaderError');
+
+        if (msgObj.log) {
+            return console.log(msgObj.log);
+        } else {
+            return;
+        }
     };
 
     /**
@@ -237,6 +265,7 @@
             $progressElement = cfriSelf._getProgressElement();
 
         secondTd = secondTd[1] || {}; // used for the icons to place them in the background
+        secondTd.insert($progressElement);
 
         if (undefined === encode_base64) {
             // @todo check for using: send(Blob) or send(ArrayBuffer)
@@ -280,9 +309,7 @@
                 beforestart: function () {
                     secondTd.removeClassName('fReaderError');
                     secondTd.removeClassName('fReaderSuccess');
-                    secondTd.addClassName('fReaderProgress');
-
-                    secondTd.insert($progressElement);
+                    $progressElement.show();
                 },
                 load: function (event, file) {
 
@@ -294,7 +321,10 @@
                             try {
                                 result = JSON.parse(response.responseText);
                             } catch (e) {
-                                return console.log('Invalid responseText in JSON', e, response);
+                                return cfriSelf._handleError(secondTd, {
+                                    alert: 'An error occurred. Tried to parse JSON response which could not be in JSON format.',
+                                    log: ['Invalid responseText in JSON', e, response]
+                                });
                             }
 
 
@@ -302,36 +332,45 @@
                                 if (result.err === false) {
                                     secondTd.removeClassName('fReaderError');
                                     secondTd.addClassName('fReaderSuccess');
-
-                                    console.log('Upload result: ', result);
-
+                                    console.debug('Upload result: ', result);
                                     cfriSelf._updateTagTip(event, file, currentIndex, result.images, productId);
                                 } else {
-                                    alert('An error occurred:\n' + result.msg);
-                                    secondTd.addClassName('fReaderError');
+                                    cfriSelf._handleError(secondTd, {
+                                        alert: 'An error occurred:\n' + result.msg
+                                    });
                                 }
                             } else {
-                                alert('An error occurred after uploading. No JSON found ...');
-                                secondTd.addClassName('fReaderError');
+                                cfriSelf._handleError(secondTd, {
+                                    alert: 'An error occurred after uploading. No JSON found ...'
+                                });
                             }
-                            secondTd.removeClassName('fReaderProgress');
                         },
                         onFailure: function () {
                             secondTd.addClassName('fReaderError');
                         }
                     });
 
-                    ajaxRequest.addUploadEvent('progress', function (event) {
-                        if (event.lengthComputable) {
-                            var percentComplete = event.loaded / event.total;
-                            cfriSelf._intervalProgress($progressElement, percentComplete, productId);
-                        }
-                        // else: Unable to compute progress information since the total size is unknown
-                    });
+                    ajaxRequest
+                        .addUploadEvent('progress', function (event) {
+                            var percentComplete = 0.00001;
+                            if (event.lengthComputable) {
+                                percentComplete = event.loaded / event.total;
+                                cfriSelf._intervalProgress($progressElement, percentComplete);
+                            }
+                            // else: Unable to compute progress information since the total size is unknown
+                        })
+                        .addUploadEvent('loadend', function (event) {
+                            $progressElement.hide();
+                            $progressElement.value = 0;
+                        });
+
                     ajaxRequest.sendPost({
                         'form_key': cfriSelf._globalConfig.form_key,
                         'productId': productId,
-                        'file': JSON.stringify(file),
+                        'file': JSON.stringify({
+                            'name': file.name,
+                            'extra': file.extra
+                        }),
                         'binaryData': encode_base64(event.target.result)
                     });
 
