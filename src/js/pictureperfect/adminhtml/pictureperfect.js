@@ -69,7 +69,8 @@
         }
 
         self._globalConfig = {
-            uploadUrl: _checkHttp(config.uploadUrl || false)
+            uploadUrl: _checkHttp(config.uploadUrl || false),
+            form_key: config.form_key || false
 //            reMarkedCfg: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
         return this;
@@ -328,6 +329,7 @@
                         // else: Unable to compute progress information since the total size is unknown
                     });
                     ajaxRequest.sendPost({
+                        'form_key': cfriSelf._globalConfig.form_key,
                         'productId': productId,
                         'file': JSON.stringify(file),
                         'binaryData': encode_base64(event.target.result)

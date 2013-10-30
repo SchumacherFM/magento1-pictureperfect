@@ -28,11 +28,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
      */
     public function catalogProductGalleryAction()
     {
-        Zend_Debug::dump($_POST);
-        exit;
-
         $helper = Mage::helper('pictureperfect');
-
         $return = array(
             'err'    => TRUE,
             'msg'    => $helper->__('An error occurred.'),
