@@ -290,6 +290,86 @@
 
     /**
      *
+     * @param event
+     * @param $secondTd element
+     * @param $progressElement
+     * @private
+     */
+    PicturePerfect.prototype._fileReaderEventBeforeStart = function (event, $secondTd, $progressElement) {
+        var self = this;
+        $secondTd.removeClassName('fReaderError');
+        $secondTd.removeClassName('fReaderSuccess');
+        $progressElement.show();
+
+    };
+
+    PicturePerfect.prototype._fileReaderEventLoad = function (event, file, $secondTd, $progressElement, productId) {
+
+        var self = this,
+            ajaxRequest = new PicturePerfectXhr(self._globalConfig.uploadUrl, {
+                onSuccess: function (event, xhrObj) {
+                    var response = event.srcElement || event.target,
+                        result = {};
+
+                    try {
+                        result = JSON.parse(response.responseText);
+                    } catch (e) {
+                        return self._handleError($secondTd, {
+                            alert: 'An error occurred. Tried to parse JSON response which could not be in JSON format.',
+                            log: ['Invalid responseText in JSON', e, response]
+                        });
+                    }
+
+
+                    if (result && _isObject(result)) {
+                        if (result.err === false) {
+                            $secondTd.removeClassName('fReaderError');
+                            $secondTd.addClassName('fReaderSuccess');
+                            console.debug('Upload result: ', result);
+                            self._updateTagTip(event, file, self._currentTrIndex, result.images, productId);
+                        } else {
+                            self._handleError($secondTd, {
+                                alert: 'An error occurred:\n' + result.msg
+                            });
+                        }
+                    } else {
+                        self._handleError($secondTd, {
+                            alert: 'An error occurred after uploading. No JSON found ...'
+                        });
+                    }
+                },
+                onFailure: function () {
+                    $secondTd.addClassName('fReaderError');
+                }
+            });
+
+        ajaxRequest
+            .addUploadEvent('progress', function (event) {
+                var percentComplete = 0.00001;
+                if (event.lengthComputable) {
+                    percentComplete = event.loaded / event.total;
+                    self._intervalProgress($progressElement, percentComplete);
+                }
+                // else: Unable to compute progress information since the total size is unknown
+            })
+            .addUploadEvent('loadend', function (event) {
+                $progressElement.hide();
+                $progressElement.value = 0;
+            });
+
+        ajaxRequest.sendPost({
+            'form_key': self._globalConfig.form_key,
+            'productId': productId,
+            'file': JSON.stringify({
+                'name': file.name,
+                'extra': file.extra
+            }),
+            'binaryData': encode_base64(event.target.result)
+        });
+    };
+
+    /**
+     *
      * @param trElement current TR
      * @param productId
      * @returns {*}
@@ -299,13 +379,12 @@
         productId = parseInt(productId, 10);
         var
             cfriSelf = this,
-            options = {},
-            secondTd = trElement.select('td'),
+            $secondTd = trElement.select('td'),
 
             $progressElement = cfriSelf._getProgressElement();
 
-        secondTd = secondTd[1] || {}; // used for the icons to place them in the background
-        secondTd.insert($progressElement);
+        $secondTd = $secondTd[1] || {}; // used for the icons to place them in the background
+        $secondTd.insert($progressElement);
 
         if (undefined === encode_base64) {
             // @todo check for using: send(Blob) or send(ArrayBuffer)
@@ -317,9 +396,7 @@
             return console.log('productId is 0 cannot instantiate fileReader', trElement);
         }
 
-//        var _currentTrIndex = 0;
-
-        options = {
+        FileReaderJS.setupDrop(trElement, {
             dragClass: 'fReaderDrag',
             accept: 'image/*',
             readAsMap: {
@@ -330,93 +407,123 @@
 
                 dragenter: cfriSelf._fileReaderEventDragEnter.bindAsEventListener(cfriSelf),
                 dragleave: cfriSelf._fileReaderEventDragLeave.bindAsEventListener(cfriSelf),
-
-                beforestart: function () {
-                    secondTd.removeClassName('fReaderError');
-                    secondTd.removeClassName('fReaderSuccess');
-                    $progressElement.show();
-                },
+                beforestart: cfriSelf._fileReaderEventBeforeStart.bindAsEventListener(cfriSelf, $secondTd, $progressElement),
                 load: function (event, file) {
-
-                    var ajaxRequest = new PicturePerfectXhr(cfriSelf._globalConfig.uploadUrl, {
-                        onSuccess: function (event, xhrObj) {
-                            var response = event.srcElement || event.target,
-                                result = {};
-
-                            try {
-                                result = JSON.parse(response.responseText);
-                            } catch (e) {
-                                return cfriSelf._handleError(secondTd, {
-                                    alert: 'An error occurred. Tried to parse JSON response which could not be in JSON format.',
-                                    log: ['Invalid responseText in JSON', e, response]
-                                });
-                            }
-
-
-                            if (result && _isObject(result)) {
-                                if (result.err === false) {
-                                    secondTd.removeClassName('fReaderError');
-                                    secondTd.addClassName('fReaderSuccess');
-                                    console.debug('Upload result: ', result);
-                                    cfriSelf._updateTagTip(event, file, cfriSelf._currentTrIndex, result.images, productId);
-                                } else {
-                                    cfriSelf._handleError(secondTd, {
-                                        alert: 'An error occurred:\n' + result.msg
-                                    });
-                                }
-                            } else {
-                                cfriSelf._handleError(secondTd, {
-                                    alert: 'An error occurred after uploading. No JSON found ...'
-                                });
-                            }
-                        },
-                        onFailure: function () {
-                            secondTd.addClassName('fReaderError');
-                        }
-                    });
-
-                    ajaxRequest
-                        .addUploadEvent('progress', function (event) {
-                            var percentComplete = 0.00001;
-                            if (event.lengthComputable) {
-                                percentComplete = event.loaded / event.total;
-                                cfriSelf._intervalProgress($progressElement, percentComplete);
-                            }
-                            // else: Unable to compute progress information since the total size is unknown
-                        })
-                        .addUploadEvent('loadend', function (event) {
-                            $progressElement.hide();
-                            $progressElement.value = 0;
-                        });
-
-                    ajaxRequest.sendPost({
-                        'form_key': cfriSelf._globalConfig.form_key,
-                        'productId': productId,
-                        'file': JSON.stringify({
-                            'name': file.name,
-                            'extra': file.extra
-                        }),
-                        'binaryData': encode_base64(event.target.result)
-                    });
-
-
+                    cfriSelf._fileReaderEventLoad(event, file, $secondTd, $progressElement, productId);
                 },
                 error: function (e, file) {
                     // Native ProgressEvent
-                    secondTd.addClassName('fReaderError');
+                    $secondTd.addClassName('fReaderError');
                     alert('An error occurred. Please see console.log');
                     return console.log('error: ', e, file);
                 },
                 skip: function (e, file) {
-                    secondTd.addClassName('fReaderError');
+                    $secondTd.addClassName('fReaderError');
                     return console.log('File format is not supported', file);
                 }
             }
-        };
-        FileReaderJS.setupDrop(trElement, options);
+        });
+
     };
 
-    var pp = new PicturePerfect();
+    /*global Element,$H,$,$$,Class*/
+    var Tagtip = Class.create({
+
+            /**
+             *
+             * @param trigger
+             * @param content
+             * @param options
+             */
+            initialize: function (trigger, content, options) {
+                this.options = $H({
+                    columnCount: 10,
+                    target: null,
+                    productId: 0
+                });
+                this.options.update(options);
+                this.container = null;
+                this.columnCount = this.options.get('columnCount');
+
+                this.target = this.options.get('target');
+                this.productId = this.options.get('productId');
+
+                if ($(content) && $(content) !== null) {
+                    this.text = $(content).innerHTML;
+                } else {
+                    this.text = content;
+                }
+
+                this.trigger = trigger;
+                this._isInitialized = true;
+
+                this._buildTip();
+                this._addObservers();
+            },
+
+            _buildTip: function () {
+                var
+                    container = new Element('tr', { 'class': 'tagtip', id: 'tip' + this.productId }),
+                    content = new Element('td', { 'class': 'content', colspan: this.columnCount - 1 }); // first column removed
+
+                container.insert(new Element('td').update('&nbsp;'));
+                container.insert(content);
+
+
+                this.trigger.insert({after: container});
+
+                this.container = container;
+                this.content = content;
+
+                this.container.setStyle({display: 'none'});
+
+                if (this.text) {
+                    this.content.update(this.text);
+                } else {
+                    this.content.update('');
+                }
+            },
+
+            _addObservers: function () {
+                this.trigger.observe('mouseover', this.showMenu.bindAsEventListener(this));
+                this.trigger.observe('mouseout', this.hideMenu.bindAsEventListener(this));
+                this.trigger.observe('dragleave', this.hideMenu.bindAsEventListener(this));
+            },
+
+            /**
+             *
+             * @returns {boolean}
+             */
+            showMenu: function () {
+                if (this._isInitialized === true) {
+                    return;
+                }
+
+                this.container.setStyle({
+                    display: 'table-row'
+                });
+                return false;
+            },
+
+            /**
+             *
+             * @returns {boolean}
+             */
+            hideMenu: function (event) {
+                this.container.hide();
+                return false;
+            },
+
+            /**
+             *
+             * @param text
+             */
+            setContent: function (text) {
+                this.content.update(text);
+            }
+        }),
+        pp = new PicturePerfect();
+
     document.observe('dom:loaded', pp.domLoaded());
 
 }).

@@ -9,9 +9,6 @@
                 <script>pictureperfect/adminhtml/filereader.js</script>
             </action>
             <action method="addJs">
-                <script>pictureperfect/adminhtml/tagtip.js</script>
-            </action>
-            <action method="addJs">
                 <script>pictureperfect/adminhtml/pictureperfect.js</script>
             </action>
             <action method="addItem">
