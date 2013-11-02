@@ -43,6 +43,119 @@
         return Object.prototype.toString.call(variable) === '[object Function]';
     }
 
+    function MassActionGalleryButton(globalConfig) {
+        var self = this;
+        self._globalConfig = globalConfig;
+        self._$progressElement = self._initProgressElement();
+        self._$button = self._initMassActionButton();
+        self._$button.insert(self._$progressElement);
+        return this;
+    }
+
+    MassActionGalleryButton.prototype = {
+
+        _initProgressElement: function () {
+            var progressElement = new Element('progress', {
+                'max': 1,
+                'value': 0,
+                'style': 'margin-left: 5px;'
+            }); // not DRY
+            progressElement.update('0%'); // for older browser ... ? ;-)
+            progressElement.hide();
+            return progressElement;
+        },
+
+        /**
+         * this methods runs every 50ms
+         * @param $progressElement Element
+         * @param percentComplete float
+         * @private
+         */
+        _intervalProgress: function (percentComplete) {
+            var self = this,
+                percentage = Math.round(percentComplete * 100);
+            self._$progressElement.value = percentComplete;
+            self._$progressElement.update(percentage + '%'); // for older browser ... ? ;-)
+        },
+        /**
+         *
+         * @private
+         */
+        _initMassActionButton: function () {
+            var self = this,
+                button = new Element('button', {
+                    id: 'picturePerfectMassAction',
+                    'class': 'picturePerfect'
+                });
+            $$('.filter-actions')[0].insert(button);
+
+            button
+                .update('Load Gallery Images')
+                .observe('click', self._massEventClickLoadGalleryButton.bindAsEventListener(self));
+            return button;
+        },
+
+        /**
+         *
+         * @param event
+         * @returns {*}
+         * @private
+         */
+        _massEventClickLoadGalleryButton: function (event) {
+            event.preventDefault();
+            var productIds = this._getMassActionCheckboxValues();
+            if (productIds.length === 0 || this._globalConfig.galleryUrl === false) {
+                return console.log('Logger: ', productIds.length, this._globalConfig.galleryUrl);
+            }
+            this._getMassActionAjaxGalleries(productIds);
+        },
+
+        /**
+         *
+         * @returns {Array}
+         * @private
+         */
+        _getMassActionCheckboxValues: function () {
+            var result = [];
+            $$('input[class~="massaction-checkbox"]').each(function (element) {
+                if (true === element.checked) {
+                    result.push(parseInt(element.value, 10));
+                }
+            });
+            return result;
+        },
+
+        /**
+         *
+         * @param productIds
+         * @private
+         */
+        _getMassActionAjaxGalleries: function (productIds) {
+            var self = this,
+                ar = new Ajax.Request(self._globalConfig.galleryUrl, {
+                    onSuccess: self._initProductGrid.bindAsEventListener(self),
+                    onFailure: function () {
+                        alert('Ajax failure!');
+                    },
+                    method: 'post',
+                    parameters: {
+                        'form_key': self._globalConfig.form_key,
+                        'productIds': productIds.join(',')
+                    }
+                });
+        },
+
+        /**
+         *
+         * @param ajaxResult
+         * @private
+         */
+        _initProductGrid: function (response) {
+            var jsonResponse = response.responseJSON;
+            console.log('_ajaxResult', jsonResponse);
+        }
+    };
+
     /**
      *
      * @returns {*}
@@ -72,6 +185,7 @@
 
         self._globalConfig = {
             uploadUrl: _checkHttp(config.uploadUrl || false),
+            galleryUrl: _checkHttp(config.galleryUrl || false),
             form_key: config.form_key || false
 //            reMarkedCfg: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
@@ -103,30 +217,8 @@
         return function ppDomLoaded() {
             self._initConfig();
             self._initFileReaderOnTableRows();
-            self._initMassActionSelect();
+            var mag = new MassActionGalleryButton(self._globalConfig);
         };
-    };
-
-    /**
-     *
-     * @private
-     */
-    PicturePerfect.prototype._initMassActionSelect = function () {
-        $('productGrid_massaction-select')
-            .insert(new Element('option', {value: 'loadGalleryImages'}).update('Load Gallery Images'))
-            .observe('change', function (event) {
-                if (event.target.value === 'loadGalleryImages') {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    $$('input[class~="massaction-checkbox"]').each(function (element) {
-                        if (true === element.checked) {
-                            console.log(element.value, element.checked);
-                            // @todo loadGallery images from server for previewing
-                        }
-                    });
-                }
-            });
     };
 
     /**

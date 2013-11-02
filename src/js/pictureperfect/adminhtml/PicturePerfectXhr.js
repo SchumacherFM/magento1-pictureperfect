@@ -24,7 +24,7 @@
         };
         self._callbackFailure = callBackObject.onFailure || function () {
         };
-        self._uploadEvents = [
+        self._upDownEvents = [
             'loadstart',
             'progress',
             'load',
@@ -95,10 +95,36 @@
      * @returns {*}
      */
     PicturePerfectXhr.prototype.addUploadEvent = function (eventName, callback) {
-        var self = this, found = false;
-        self._uploadEvents.forEach(function (availableEvent) {
+        this._addEvent('upload', eventName, callback);
+        return this;
+    }
+
+    /**
+     *
+     * @param eventName
+     * @param callback
+     * @returns {*}
+     */
+    PicturePerfectXhr.prototype.addDownloadEvent = function (eventName, callback) {
+        this._addEvent('download', eventName, callback);
+        return this;
+    }
+
+    /**
+     *
+     * @param type
+     * @param eventName
+     * @param callback
+     * @returns {*}
+     * @private
+     */
+    PicturePerfectXhr.prototype._addEvent = function (type, eventName, callback) {
+        var self = this, found = false,
+            _xhrObj = type === 'upload' ? self._xhr.upload : self._xhr;
+
+        self._upDownEvents.forEach(function (availableEvent) {
             if (availableEvent === eventName) {
-                self._xhr.upload.addEventListener(eventName, callback, false);
+                _xhrObj.addEventListener(eventName, callback, false);
                 found = true;
                 return;
             }

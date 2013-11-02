@@ -24,6 +24,31 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
     }
 
     /**
+     * gets all gallery images for a product id
+     */
+    public function catalogProductGetGalleryByIdsAction()
+    {
+        $helper = Mage::helper('pictureperfect');
+        $return = array(
+            'err'    => TRUE,
+            'msg'    => $helper->__('An error occurred.'),
+            'images' => NULL
+        );
+
+        if (FALSE === $this->getRequest()->isPost()) {
+            return $this->_setReturn($return, TRUE);
+        }
+        $productIds = explode(',', $this->getRequest()->getParam('productIds', ''));
+        foreach ($productIds as &$productId) {
+            $productId = (int)$productId;
+        }
+
+        $return['images'] = $productIds;
+
+        return $this->_setReturn($return, TRUE);
+    }
+
+    /**
      * @return $this
      */
     public function catalogProductGalleryAction()

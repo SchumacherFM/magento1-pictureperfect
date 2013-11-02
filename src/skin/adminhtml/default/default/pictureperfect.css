@@ -40,3 +40,7 @@
     background-repeat   : no-repeat;
     background-position : left top;
 }
+
+button.picturePerfect {
+    float : left;
+}

@@ -14,9 +14,10 @@ class SchumacherFM_PicturePerfect_Block_Adminhtml_Config extends Mage_Adminhtml_
      */
     protected function _getConfig()
     {
-        $config              = array();
-        $config['uploadUrl'] = $this->getUrl('*/picturePerfect/catalogProductGallery');
-        $config['form_key']  = Mage::getSingleton('core/session')->getFormKey();
+        $config               = array();
+        $config['uploadUrl']  = $this->getUrl('*/picturePerfect/catalogProductGallery');
+        $config['galleryUrl'] = $this->getUrl('*/picturePerfect/catalogProductGetGalleryByIds');
+        $config['form_key']   = Mage::getSingleton('core/session')->getFormKey();
         return Zend_Json_Encoder::encode($config);
     }
 
