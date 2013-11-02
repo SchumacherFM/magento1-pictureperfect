@@ -181,10 +181,11 @@
         var dragClass = instanceOptions.dragClass;
         var initializedOnBody = false;
 
-        // Bind drag events to the dropbox to add the class while dragging, and accept the drop data transfer.
         dropbox.addEventListener("dragenter", onlyWithFiles(dragenter), false);
         dropbox.addEventListener("dragleave", onlyWithFiles(dragleave), false);
         dropbox.addEventListener("dragover", onlyWithFiles(dragover), false);
+
+        // Bind drag events to the dropbox to add the class while dragging, and accept the drop data transfer.
         dropbox.addEventListener("drop", onlyWithFiles(drop), false);
 
         // Bind to body to prevent the dropbox events from firing when it was initialized on the page.

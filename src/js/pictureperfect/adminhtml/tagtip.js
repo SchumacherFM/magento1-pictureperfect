@@ -9,11 +9,11 @@ var Tagtip = Class.create({
      */
     initialize: function (trigger, content, options) {
         this.options = $H({
-            hideTrigger: 'mouseout',
+
             offsetx: 25,
             offsety: 0,
             columnCount: 10,
-            showTrigger: 'mouseover',
+
             target: null,
             title: null,
             productId: 0
@@ -22,11 +22,11 @@ var Tagtip = Class.create({
 
         this.container = null;
 
-        this.hideTrigger = this.options.get('hideTrigger');
+
         this.offsetx = this.options.get('offsetx');
         this.offsety = this.options.get('offsety');
         this.columnCount = this.options.get('columnCount');
-        this.showTrigger = this.options.get('showTrigger');
+
         this.target = this.options.get('target');
         this.productId = this.options.get('productId');
 
@@ -68,35 +68,33 @@ var Tagtip = Class.create({
     },
 
     _addObservers: function () {
-        this.trigger.observe(this.showTrigger, this.showMenu.bindAsEventListener(this));
-        this.trigger.observe(this.hideTrigger, this.hideMenu.bindAsEventListener(this));
+        this.trigger.observe('mouseover', this.showMenu.bindAsEventListener(this));
+        this.trigger.observe('mouseout', this.hideMenu.bindAsEventListener(this));
+        this.trigger.observe('dragleave', this.hideMenu.bindAsEventListener(this));
     },
 
     /**
      *
-     * @param event
      * @returns {boolean}
      */
-    showMenu: function (event) {
+    showMenu: function () {
         if (this._isInitialized === true) {
-            return false;
+            return;
         }
 
-        // reset position
         this.container.setStyle({
             display: 'table-row'
         });
-
         return false;
     },
 
     /**
      *
-     * @param event
      * @returns {boolean}
      */
     hideMenu: function (event) {
         this.container.hide();
+//        console.log('hideMenu', event);
         return false;
     },
 

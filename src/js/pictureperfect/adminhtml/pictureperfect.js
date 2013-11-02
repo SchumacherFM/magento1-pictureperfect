@@ -53,6 +53,8 @@
         self._globalConfig = {};
         self._tagTipCollection = {};
         self._tableColumnCount = 10;
+        self._currentTrIndex = 0;
+        self._previousTrIndex = 0;
         return this;
     }
 
@@ -180,9 +182,9 @@
             content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
         });
 
-        self._tagTipCollection[currentIndex].setContent(content);
-        self._tagTipCollection[currentIndex]._isInitialized = false;
-        self._tagTipCollection[currentIndex].showMenu(event);
+        self._tagTipCollection[self._currentTrIndex].setContent(content);
+        self._tagTipCollection[self._currentTrIndex]._isInitialized = false;
+        self._tagTipCollection[self._currentTrIndex].showMenu(event);
         return this;
     };
 
@@ -213,21 +215,6 @@
 
     /**
      *
-     * @param event
-     * @returns {Number}
-     * @private
-     */
-    PicturePerfect.prototype._getIndex = function (event) {
-        var target = event.srcElement || event.target,
-            row = target.parentNode,
-            ri = parseInt(row.rowIndex || -1, 10),
-            productId = parseInt(row.readAttribute('data-pid') || 0, 10);
-
-        return productId > 0 && ri > -1 ? productId : false;
-    };
-
-    /**
-     *
      * @param secondTd
      * @param msgObj
      * @private
@@ -250,6 +237,59 @@
 
     /**
      *
+     * @param event
+     * @returns {Number}
+     * @private
+     */
+    PicturePerfect.prototype._getIndex = function (trElement, productId) {
+        var ri = parseInt(trElement.rowIndex || -1, 10);
+        return productId > 0 && ri > -1 ? productId : false;
+    };
+
+    /**
+     *
+     * @param event
+     * @private
+     */
+    PicturePerfect.prototype._fileReaderEventDragEnter = function (event) {
+        var self = this,
+            trElement = (event.srcElement || event.target).parentNode,
+            productId = parseInt(trElement.readAttribute('data-pid') || 0, 10),
+            index = self._getIndex(trElement, productId);
+
+        if (false === index) {
+            return;
+        }
+        if (self._previousTrIndex !== self._currentTrIndex) {
+            self._previousTrIndex = self._currentTrIndex;
+        }
+
+        self._currentTrIndex = index;
+
+        if (undefined === self._tagTipCollection[self._currentTrIndex]) {
+            self._tagTipCollection[self._currentTrIndex] = self._getTagTip(trElement, productId);
+        }
+
+        if (false === self._tagTipCollection[self._currentTrIndex]._isInitialized) {
+            self._tagTipCollection[self._currentTrIndex].showMenu();
+        }
+    };
+
+    /**
+     * only hide the row when we leave the tr and not a td
+     *
+     * @param event
+     * @private
+     */
+    PicturePerfect.prototype._fileReaderEventDragLeave = function (event) {
+        var self = this;
+        if (undefined !== self._tagTipCollection[self._previousTrIndex] && self._previousTrIndex !== self._currentTrIndex) {
+            self._tagTipCollection[self._previousTrIndex].hideMenu();
+        }
+    };
+
+    /**
+     *
      * @param trElement current TR
      * @param productId
      * @returns {*}
@@ -261,7 +301,7 @@
             cfriSelf = this,
             options = {},
             secondTd = trElement.select('td'),
-            currentIndex = '',
+
             $progressElement = cfriSelf._getProgressElement();
 
         secondTd = secondTd[1] || {}; // used for the icons to place them in the background
@@ -277,6 +317,8 @@
             return console.log('productId is 0 cannot instantiate fileReader', trElement);
         }
 
+//        var _currentTrIndex = 0;
+
         options = {
             dragClass: 'fReaderDrag',
             accept: 'image/*',
@@ -286,25 +328,8 @@
             readAsDefault: 'BinaryString',
             on: {
 
-                dragenter: function (event) {
-                    var index = cfriSelf._getIndex(event);
-
-                    if (false === index) {
-                        return;
-                    }
-                    currentIndex = index;
-                    if (undefined === cfriSelf._tagTipCollection[currentIndex]) {
-                        cfriSelf._tagTipCollection[currentIndex] = cfriSelf._getTagTip(trElement, productId);
-                    }
-                    if (false === cfriSelf._tagTipCollection[currentIndex]._isInitialized) {
-                        cfriSelf._tagTipCollection[currentIndex].showMenu(event);
-                    }
-                },
-                dragleave: function (event) {
-                    if (undefined !== cfriSelf._tagTipCollection[currentIndex]) {
-                        cfriSelf._tagTipCollection[currentIndex].hideMenu(event);
-                    }
-                },
+                dragenter: cfriSelf._fileReaderEventDragEnter.bindAsEventListener(cfriSelf),
+                dragleave: cfriSelf._fileReaderEventDragLeave.bindAsEventListener(cfriSelf),
 
                 beforestart: function () {
                     secondTd.removeClassName('fReaderError');
@@ -333,7 +358,7 @@
                                     secondTd.removeClassName('fReaderError');
                                     secondTd.addClassName('fReaderSuccess');
                                     console.debug('Upload result: ', result);
-                                    cfriSelf._updateTagTip(event, file, currentIndex, result.images, productId);
+                                    cfriSelf._updateTagTip(event, file, cfriSelf._currentTrIndex, result.images, productId);
                                 } else {
                                     cfriSelf._handleError(secondTd, {
                                         alert: 'An error occurred:\n' + result.msg
