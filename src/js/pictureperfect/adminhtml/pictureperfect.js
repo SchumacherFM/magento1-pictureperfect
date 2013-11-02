@@ -4,10 +4,12 @@
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
  * @copyright   Copyright (c)
  */
-/*global $,window,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,Tagtip,PicturePerfectXhr*/
+/*global $,window,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,PicturePerfectXhr*/
 ;
 (function () {
     'use strict';
+
+    var _tagTipCollection = {};
 
     /**
      *
@@ -152,8 +154,63 @@
          * @private
          */
         _initProductGrid: function (response) {
-            var jsonResponse = response.responseJSON;
-            console.log('_ajaxResult', jsonResponse);
+            var jsonResponse = response.responseJSON,
+                self = this,
+                _tableColumnCount = 0;
+
+            if (false !== jsonResponse.err) {
+                alert(jsonResponse.msg);
+                return console.error(jsonResponse);
+            }
+
+
+            $$('#productGrid_table tbody tr').each(function (element, index) {
+                if (index === 0) {
+                    _tableColumnCount = element.cells.length || 10;
+                }
+                var checkBox = element.select('.massaction-checkbox'),
+                    productId = (checkBox[0] || {value: 0}).value,
+                    images = jsonResponse.images[productId] || false;
+
+                if (false === images) {
+                    return;
+                }
+
+                if (false === element.hasAttribute('data-pid')) {
+                    element.writeAttribute('data-pid', productId);
+                }
+
+                self._getTagTip(element, productId, images, _tableColumnCount);
+
+            });
+        },
+
+        /**
+         *
+         * @param trElement
+         * @param productId
+         * @param images
+         * @param tableColumnCount
+         * @returns {MassActionGalleryButton}
+         * @private
+         */
+        _getTagTip: function (trElement, productId, images, tableColumnCount) {
+            var self = this, content = 'PID: ' + productId + '<br/>';
+
+            if (undefined === _tagTipCollection[productId]) {
+                _tagTipCollection[productId] = new TagTip(trElement, 'Initializing ...', {
+                    columnCount: tableColumnCount,
+                    productId: productId
+                });
+            }
+
+            images.forEach(function (image, index) {
+                content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
+            });
+
+            _tagTipCollection[productId].setContent(content);
+            _tagTipCollection[productId]._isInitialized = false;
+            return this;
         }
     };
 
@@ -165,7 +222,6 @@
     function PicturePerfect() {
         var self = this;
         self._globalConfig = {};
-        self._tagTipCollection = {};
         self._tableColumnCount = 10;
         self._currentTrIndex = 0;
         self._previousTrIndex = 0;
@@ -242,7 +298,7 @@
     /**
      *
      * @param trElement
-     * @returns {Tagtip}
+     * @returns {TagTip}
      * @private
      */
     PicturePerfect.prototype._getTagTip = function (trElement, productId) {
@@ -251,7 +307,7 @@
                 columnCount: self._tableColumnCount,
                 productId: productId
             };
-        return new Tagtip(trElement, 'Waiting for upload ...', _tipOptions);
+        return new TagTip(trElement, 'Waiting for upload ...', _tipOptions);
     };
 
     /**
@@ -275,9 +331,9 @@
             content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
         });
 
-        self._tagTipCollection[self._currentTrIndex].setContent(content);
-        self._tagTipCollection[self._currentTrIndex]._isInitialized = false;
-        self._tagTipCollection[self._currentTrIndex].showMenu(event);
+        _tagTipCollection[self._currentTrIndex].setContent(content);
+        _tagTipCollection[self._currentTrIndex]._isInitialized = false;
+        _tagTipCollection[self._currentTrIndex].showMenu(event);
         return this;
     };
 
@@ -359,12 +415,12 @@
 
         self._currentTrIndex = index;
 
-        if (undefined === self._tagTipCollection[self._currentTrIndex]) {
-            self._tagTipCollection[self._currentTrIndex] = self._getTagTip(trElement, productId);
+        if (undefined === _tagTipCollection[self._currentTrIndex]) {
+            _tagTipCollection[self._currentTrIndex] = self._getTagTip(trElement, productId);
         }
 
-        if (false === self._tagTipCollection[self._currentTrIndex]._isInitialized) {
-            self._tagTipCollection[self._currentTrIndex].showMenu();
+        if (false === _tagTipCollection[self._currentTrIndex]._isInitialized) {
+            _tagTipCollection[self._currentTrIndex].showMenu();
         }
     };
 
@@ -376,8 +432,8 @@
      */
     PicturePerfect.prototype._fileReaderEventDragLeave = function (event) {
         var self = this;
-        if (undefined !== self._tagTipCollection[self._previousTrIndex] && self._previousTrIndex !== self._currentTrIndex) {
-            self._tagTipCollection[self._previousTrIndex].hideMenu();
+        if (undefined !== _tagTipCollection[self._previousTrIndex] && self._previousTrIndex !== self._currentTrIndex) {
+            _tagTipCollection[self._previousTrIndex].hideMenu();
         }
     };
 
@@ -520,7 +576,7 @@
     };
 
     /*global Element,$H,$,$$,Class*/
-    var Tagtip = Class.create({
+    var TagTip = Class.create({
 
             /**
              *
