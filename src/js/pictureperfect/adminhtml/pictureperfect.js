@@ -105,6 +105,7 @@
             event.preventDefault();
             var productIds = this._getMassActionCheckboxValues();
             if (productIds.length === 0 || this._globalConfig.galleryUrl === false) {
+                alert('Please select items.');
                 return console.log('Logger: ', productIds.length, this._globalConfig.galleryUrl);
             }
             this._getMassActionAjaxGalleries(productIds);

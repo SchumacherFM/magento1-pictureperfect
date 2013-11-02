@@ -42,9 +42,44 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         foreach ($productIds as &$productId) {
             $productId = (int)$productId;
         }
+        /** @var Mage_Catalog_Model_Resource_Product_Collection $collection */
+        $collection = Mage::getModel('catalog/product')->getCollection();
+        $collection
+            ->addAttributeToFilter('entity_id', array('in' => $productIds))
+            ->setOrder('entity_id');
 
-        $return['images'] = $productIds;
+        if ($collection->count() === 0) {
+            $return['msg'] = $helper->__('Cannot find product entities: ' . var_export($productIds, 1));
+            return $this->_setReturn($return, TRUE);
+        }
 
+        /** @var Mage_Catalog_Model_Resource_Eav_Attribute $mediaGalleryAttribute */
+        $mediaGalleryAttribute   = Mage::getSingleton('eav/config')->getAttribute(Mage_Catalog_Model_Product::ENTITY, 'media_gallery');
+        $mediaGalleryAttributeId = (int)$mediaGalleryAttribute->getAttributeId();
+
+        if (0 === $mediaGalleryAttributeId) {
+            $return['msg'] = $helper->__('Cannot find media_gallery attribute in eav/attributes.');
+            return $this->_setReturn($return, TRUE);
+        }
+
+        /** @var Mage_Catalog_Model_Product_Attribute_Backend_Media $mediaGalleryBackend */
+        $mediaGalleryBackend = $mediaGalleryAttribute->getBackend();
+
+        if (FALSE === ($mediaGalleryBackend instanceof Mage_Catalog_Model_Product_Attribute_Backend_Media)) {
+            $return['msg'] = $helper->__('Cannot find media_gallery backend in eav/attributes.');
+            return $this->_setReturn($return, TRUE);
+        }
+
+        $return['msg'] = '';
+        $return['err'] = FALSE;
+
+        $galleries = array();
+        foreach ($collection as $product) {
+            /** @var $product Mage_Catalog_Model_Product */
+            $mediaGalleryBackend->afterLoad($product);
+            $galleries[$product->getId()] = $this->_getResizedGalleryImages($product);
+        }
+        $return['images'] = $galleries;
         return $this->_setReturn($return, TRUE);
     }
 
@@ -94,14 +129,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         try {
             $product->addImageToMediaGallery($this->_getTempStorage() . $fileName, NULL, TRUE, FALSE);
             $product->getResource()->save($product); // bypassing observer
-
-            $return['images'] = array();
-            $images           = $product->getMediaGallery('images');
-
-            foreach ($images as $image) {
-                $image['resized']   = (string)Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
-                $return['images'][] = $image;
-            }
+            $return['images'] = $this->_getResizedGalleryImages($product);
         } catch (Exception $e) {
             $return['err'] = TRUE;
             $return['msg'] = $helper->__('Error in saving the image: %s for productId: %s', $fileName, $productId);
@@ -109,6 +137,20 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         }
 
         $this->_setReturn($return, TRUE);
+    }
+
+    /**
+     * @param Mage_Catalog_Model_Product $product
+     *
+     * @return mixed
+     */
+    protected function _getResizedGalleryImages(Mage_Catalog_Model_Product $product)
+    {
+        $images = $product->getMediaGallery('images');
+        foreach ($images as &$image) {
+            $image['resized'] = (string)Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
+        }
+        return $images;
     }
 
     /**
