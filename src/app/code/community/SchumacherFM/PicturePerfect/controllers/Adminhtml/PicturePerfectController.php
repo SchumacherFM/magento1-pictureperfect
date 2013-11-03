@@ -154,7 +154,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         foreach ($images as &$image) {
             /** @var Mage_Catalog_Helper_Image $catalogImage */
 
-            $fileSize         = Mage::helper('pictureperfect')->getFileSize($baseDir . $image['file']);
+            $fileSize         = Mage::helper('pictureperfect')->getFileSize($baseDir . DS . $image['file']);
             $catalogImage     = Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
             $image['resized'] = (string)$catalogImage;
 
