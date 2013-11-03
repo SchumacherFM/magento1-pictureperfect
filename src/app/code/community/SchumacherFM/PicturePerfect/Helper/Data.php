@@ -24,7 +24,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      *
      * @return string
      */
-    public function getAdminFileUploadUrl(array $params = null)
+    public function getAdminFileUploadUrl(array $params = NULL)
     {
         return Mage::helper('adminhtml')->getUrl('adminhtml/pictureperfect/fileUpload', $params);
     }
@@ -40,19 +40,45 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $config = trim(Mage::getStoreConfig('pictureperfect/' . $type . '/config'));
         if (empty($config)) {
-            return false;
+            return FALSE;
         }
         $decoded = json_decode($config);
-        return $decoded instanceof stdClass ? rawurlencode($config) : false;
+        return $decoded instanceof stdClass ? rawurlencode($config) : FALSE;
     }
 
     /**
-     * if json is invalid returns false
+     * @param $file
      *
-     * @return string|boolean
+     * @return int
      */
-    public function getReMarkedConfig()
+    public function getFileSize($file)
     {
-        return $this->_getJsonConfig('remarked');
+        $size = 0;
+        if (file_exists($file)) {
+            $size = filesize($file);
+        }
+        return $size;
+    }
+
+    /**
+     * @param $bytes
+     *
+     * @return string
+     */
+    public function getPrettySize($bytes)
+    {
+        $s = array('bytes', 'kb', 'MB', 'GB', 'TB', 'PB');
+        $e = floor(log($bytes) / log(1024));
+        return round($bytes / pow(1024, floor($e)), 2) . ' ' . $s[$e];
+    }
+
+    /**
+     * Images Storage root directory
+     *
+     * @return string
+     */
+    public function getTempStorage()
+    {
+        return Mage::getBaseDir() . DS . 'var' . DS . 'pictureperfect' . DS;
     }
 }

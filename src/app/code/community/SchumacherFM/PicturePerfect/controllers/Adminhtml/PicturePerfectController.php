@@ -116,9 +116,11 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             return $this->_setReturn($return, TRUE);
         }
 
-        $io = new Varien_Io_File();
-        if ($io->checkAndCreateFolder($this->_getTempStorage())) {
-            $result = (int)file_put_contents($this->_getTempStorage() . $fileName, $binaryData); // io->write will not work :-(
+        $io          = new Varien_Io_File();
+        $tempStorage = Mage::helper('pictureperfect')->getTempStorage();
+
+        if ($io->checkAndCreateFolder($tempStorage)) {
+            $result = (int)file_put_contents($tempStorage . $fileName, $binaryData); // io->write will not work :-(
             if ($result > 10) {
                 $return['err'] = FALSE;
                 $return['msg'] = $helper->__('Upload successful for image: %s', $fileName);
@@ -127,7 +129,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         }
 
         try {
-            $product->addImageToMediaGallery($this->_getTempStorage() . $fileName, NULL, TRUE, FALSE);
+            $product->addImageToMediaGallery($tempStorage . $fileName, NULL, TRUE, FALSE);
             $product->getResource()->save($product); // bypassing observer
             $return['images'] = $this->_getResizedGalleryImages($product);
         } catch (Exception $e) {
@@ -151,36 +153,16 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
 
         foreach ($images as &$image) {
             /** @var Mage_Catalog_Helper_Image $catalogImage */
-            $catalogImage            = Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
-            $image['resized']        = (string)$catalogImage;
-            $fileSize                = filesize($baseDir . $image['file']);
+
+            $fileSize         = Mage::helper('pictureperfect')->getFileSize($baseDir . $image['file']);
+            $catalogImage     = Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
+            $image['resized'] = (string)$catalogImage;
+
             $image['fileSize']       = $fileSize;
-            $image['fileSizePretty'] = $this->_prettySize($fileSize);
+            $image['fileSizePretty'] = Mage::helper('pictureperfect')->getPrettySize($fileSize);
             $image['widthHeight']    = $catalogImage->getOriginalWidth() . 'x' . $catalogImage->getOriginalHeight() . 'px';
             $image['label']          = htmlspecialchars($image['label']);
         }
         return $images;
-    }
-
-    /**
-     * @param $bytes
-     *
-     * @return string
-     */
-    protected function _prettySize($bytes)
-    {
-        $s = array('bytes', 'kb', 'MB', 'GB', 'TB', 'PB');
-        $e = floor(log($bytes) / log(1024));
-        return round($bytes / pow(1024, floor($e)), 2) . ' ' . $s[$e];
-    }
-
-    /**
-     * Images Storage root directory
-     *
-     * @return string
-     */
-    protected function _getTempStorage()
-    {
-        return Mage::getBaseDir() . DS . 'var' . DS . 'pictureperfect' . DS;
     }
 }
