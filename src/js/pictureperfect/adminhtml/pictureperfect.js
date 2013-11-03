@@ -256,7 +256,7 @@
             self = this,
             config = JSON.parse($('picturePerfectConfig').readAttribute('data-config') || '{}');
         if (config.uploadUrl === undefined) {
-            return console.log('PicturePerfect Global Config not found. General error!');
+            return console.log('js:PicturePerfect Global Config not found. General error!');
         }
 
         self._globalConfig = {
@@ -286,7 +286,7 @@
 
         if (self._isFileReaderEnabled() === false) {
             return function _missingFileReader() {
-                return console.log('FileReader is missing');
+                return console.log('js:FileReader is missing');
             };
         }
 
@@ -344,7 +344,7 @@
         var self = this,
             content = '';
 
-        content += 'PID: ' + productId + '; Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
+        content += 'js:PID: ' + productId + '; Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
 
         images.forEach(function (image, index) {
             content += getTagTipTemplate(image);
@@ -483,8 +483,8 @@
                         result = JSON.parse(response.responseText);
                     } catch (e) {
                         return self._handleError($secondTd, {
-                            alert: 'An error occurred. Tried to parse JSON response which could not be in JSON format.',
-                            log: ['Invalid responseText in JSON', e, response]
+                            alert: 'js:An error occurred. Tried to parse JSON response which could not be in JSON format.',
+                            log: ['js:Invalid responseText in JSON', e, response]
                         });
                     }
 
@@ -497,12 +497,12 @@
                             self._updateTagTip(event, file, self._currentTrIndex, result.images, productId);
                         } else {
                             self._handleError($secondTd, {
-                                alert: 'An error occurred:\n' + result.msg
+                                alert: 'js:An error occurred:\n' + result.msg
                             });
                         }
                     } else {
                         self._handleError($secondTd, {
-                            alert: 'An error occurred after uploading. No JSON found ...'
+                            alert: 'js:An error occurred after uploading. No JSON found ...'
                         });
                     }
                 },
@@ -557,11 +557,11 @@
         if (undefined === encode_base64) {
             // @todo check for using: send(Blob) or send(ArrayBuffer)
             // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
-            return console.log('FileReader not available because method encode_base64() is missing!');
+            return console.log('js:FileReader not available because method encode_base64() is missing!');
         }
 
         if (0 === productId) {
-            return console.log('productId is 0 cannot instantiate fileReader', trElement);
+            return console.log('js:productId is 0 cannot instantiate fileReader', trElement);
         }
 
         FileReaderJS.setupDrop(trElement, {
@@ -582,12 +582,12 @@
                 error: function (e, file) {
                     // Native ProgressEvent
                     $secondTd.addClassName('fReaderError');
-                    alert('An error occurred. Please see console.log');
+                    alert('js:An error occurred. Please see console.log');
                     return console.log('error: ', e, file);
                 },
                 skip: function (e, file) {
                     $secondTd.addClassName('fReaderError');
-                    return console.log('File format is not supported', file);
+                    return console.log('js:File format is not supported', file);
                 }
             }
         });
