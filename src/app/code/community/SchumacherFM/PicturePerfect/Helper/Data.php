@@ -67,12 +67,22 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getPrettySize($bytes)
     {
-        if($bytes < 0.1){
+        if ($bytes < 0.1) {
             return '';
         }
-        $s = array('bytes', 'kb', 'MB', 'GB', 'TB', 'PB');
+        $s = array('bytes', 'KB', 'MB', 'GB', 'TB', 'PB');
         $e = floor(log($bytes) / log(1024));
-        return round($bytes / pow(1024, floor($e)), 2) . ' ' . $s[$e];
+        return sprintf('%.2f', $bytes / pow(1024, floor($e))) . ' ' . $s[$e];
+    }
+
+    /**
+     * @param Mage_Catalog_Helper_Image $catalogImage
+     *
+     * @return string
+     */
+    public function getImageWithHeight(Mage_Catalog_Helper_Image $catalogImage)
+    {
+        return $catalogImage->getOriginalWidth() . ' x ' . $catalogImage->getOriginalHeight() . 'px';
     }
 
     /**

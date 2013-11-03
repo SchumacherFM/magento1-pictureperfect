@@ -160,7 +160,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
 
             $image['fileSize']       = $fileSize;
             $image['fileSizePretty'] = Mage::helper('pictureperfect')->getPrettySize($fileSize);
-            $image['widthHeight']    = $catalogImage->getOriginalWidth() . 'x' . $catalogImage->getOriginalHeight() . 'px';
+            $image['widthHeight']    = Mage::helper('pictureperfect')->getImageWithHeight($catalogImage);
             $image['label']          = htmlspecialchars($image['label']);
         }
         return $images;
