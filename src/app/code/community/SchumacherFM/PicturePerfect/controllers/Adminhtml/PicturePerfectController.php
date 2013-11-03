@@ -146,11 +146,32 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
      */
     protected function _getResizedGalleryImages(Mage_Catalog_Model_Product $product)
     {
-        $images = $product->getMediaGallery('images');
+        $images  = $product->getMediaGallery('images');
+        $baseDir = Mage::getSingleton('catalog/product_media_config')->getBaseMediaPath();
+
         foreach ($images as &$image) {
-            $image['resized'] = (string)Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
+            /** @var Mage_Catalog_Helper_Image $catalogImage */
+            $catalogImage            = Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
+            $image['resized']        = (string)$catalogImage;
+            $fileSize                = filesize($baseDir . $image['file']);
+            $image['fileSize']       = $fileSize;
+            $image['fileSizePretty'] = $this->_prettySize($fileSize);
+            $image['widthHeight']    = $catalogImage->getOriginalWidth() . 'x' . $catalogImage->getOriginalHeight() . 'px';
+            $image['label']          = htmlspecialchars($image['label']);
         }
         return $images;
+    }
+
+    /**
+     * @param $bytes
+     *
+     * @return string
+     */
+    protected function _prettySize($bytes)
+    {
+        $s = array('bytes', 'kb', 'MB', 'GB', 'TB', 'PB');
+        $e = floor(log($bytes) / log(1024));
+        return round($bytes / pow(1024, floor($e)), 2) . ' ' . $s[$e];
     }
 
     /**

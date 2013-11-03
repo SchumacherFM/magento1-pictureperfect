@@ -12,10 +12,28 @@
     text-align : left;
 }
 
-.tagtip .content img {
-    width  : 60px;
+.ppC {
+    width  : 90px;
     float  : left;
     margin : 0 3px 3px 0;
+}
+
+.ppC .img {
+    margin              : 0 auto;
+    width               : 60px;
+    height              : 60px;
+    overflow            : hidden;
+    background-repeat   : no-repeat;
+    background-position : center center;
+}
+
+.ppC .txt {
+    width      : 100%;
+    margin     : 2px 0 0 0;
+    text-align : center;
+}
+.ppC .txt.label {
+    font-weight: bold;
 }
 
 .fReaderDrag td {

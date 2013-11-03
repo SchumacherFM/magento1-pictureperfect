@@ -45,6 +45,25 @@
         return Object.prototype.toString.call(variable) === '[object Function]';
     }
 
+    /**
+     *
+     * @param image object
+     * @returns {string}
+     */
+    function getTagTipTemplate(image) {
+        var content = '';
+
+        content = '<div class="ppC"><div class="img" style="background-image: url(' + image.resized + ');" title="' + image.file + '"></div>';
+        if (image.label !== '') {
+            content += '<div class="txt label">' + image.label + '</div>';
+        }
+        content += '<div class="txt">' + image.fileSizePretty + '</div><div class="txt">' + image.widthHeight + '</div>';
+
+        content += '</div>';
+        return content;
+    }
+
+
     function MassActionGalleryButton(globalConfig) {
         var self = this;
         self._globalConfig = globalConfig;
@@ -180,22 +199,22 @@
                     element.writeAttribute('data-pid', productId);
                 }
 
-                self._getTagTip(element, productId, images, _tableColumnCount);
+                self._initTagTip(element, productId, images, _tableColumnCount);
 
             });
         },
 
         /**
          *
-         * @param trElement
-         * @param productId
-         * @param images
-         * @param tableColumnCount
+         * @param trElement object
+         * @param productId int
+         * @param images array
+         * @param tableColumnCount int
          * @returns {MassActionGalleryButton}
          * @private
          */
-        _getTagTip: function (trElement, productId, images, tableColumnCount) {
-            var self = this, content = 'PID: ' + productId + '<br/>';
+        _initTagTip: function (trElement, productId, images, tableColumnCount) {
+            var self = this, content = '';
 
             if (undefined === _tagTipCollection[productId]) {
                 _tagTipCollection[productId] = new TagTip(trElement, 'Initializing ...', {
@@ -205,7 +224,7 @@
             }
 
             images.forEach(function (image, index) {
-                content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
+                content += getTagTipTemplate(image);
             });
 
             _tagTipCollection[productId].setContent(content);
@@ -328,7 +347,7 @@
         content += 'PID: ' + productId + '; Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
 
         images.forEach(function (image, index) {
-            content += '<img src="' + image.resized + '" alt="' + image.file + '"> ';
+            content += getTagTipTemplate(image);
         });
 
         _tagTipCollection[self._currentTrIndex].setContent(content);
