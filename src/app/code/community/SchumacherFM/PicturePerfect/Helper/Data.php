@@ -67,6 +67,9 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getPrettySize($bytes)
     {
+        if($bytes < 0.1){
+            return '';
+        }
         $s = array('bytes', 'kb', 'MB', 'GB', 'TB', 'PB');
         $e = floor(log($bytes) / log(1024));
         return round($bytes / pow(1024, floor($e)), 2) . ' ' . $s[$e];
