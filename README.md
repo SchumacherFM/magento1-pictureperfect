@@ -1,12 +1,31 @@
 Magento PicturePerfect Module
 =============================
 
-PicturePerfect is a cool tool.
+PicturePerfect enables the Magento backend user to asynchronously upload multiple photos for different products via drag and drop.
 
 Why do I need this?
 -------------------
 
-Simplify the upload process of photos.
+Asynchronous upload of multiple photos for different products via drag and drop.
+
+See the screencast:
+
+youtube.com Url ...
+
+Compatibility
+-------------
+
+| Browser | Minimum Version |
+| --------|-----------------|
+| Internet Explorer | 10 |
+| Firefox | 23 |
+| Chrome | 29 |
+| Safari | 6 |
+| Opera | 17 |
+
+- File API [http://caniuse.com/#feat=fileapi](http://caniuse.com/#feat=fileapi)
+- Progress Tag [http://caniuse.com/#feat=progressmeter](http://caniuse.com/#feat=progressmeter)
+
 
 Configuration
 -------------
