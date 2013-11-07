@@ -105,7 +105,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     {
         $return = $this->convertCfgVarToBytes(ini_get('upload_max_filesize'));
         $pms    = $this->getPostMaxSize();
-        return $return > $pms ? $pms-1 : $return;
+        return $return > $pms ? $pms - 1 : $return;
     }
 
     /**
@@ -117,13 +117,14 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
-     * if 0 then disabled ...
+     * at least one upload must be allowed
      *
      * @return int
      */
     public function getMaxFileUploads()
     {
-        return (int)ini_get('max_file_uploads');
+        $return = (int)ini_get('max_file_uploads');
+        return $return < 1 ? 1 : $return;
     }
 
     /**

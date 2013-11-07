@@ -172,11 +172,10 @@
         var blobFish = postData[self._postConfig.checkForChunkFieldName] || {},
             isBlobFish = (blobFish instanceof win.Blob),
             blobFishSize = isBlobFish ? blobFish.size : 0,
-            nonBinaryFormLength = self._getNonBinaryFormLength(postData),
+            postMaxSizeOpt = self._postConfig.postMaxSize - self._getNonBinaryFormLength(postData),
         // uploadMaxFileSize must be always smaller than postMaxSize
-            isTinyBlobFish = blobFishSize < self._postConfig.uploadMaxFileSize && blobFishSize < (self._postConfig.postMaxSize - nonBinaryFormLength);
+            isTinyBlobFish = blobFishSize < self._postConfig.uploadMaxFileSize && blobFishSize < postMaxSizeOpt;
 
-//        console.log(nonBinaryFormLength, self._postConfig);
 
         // if not a blob found or blob size smaller than php post max size, then go
         if (false === isBlobFish || true === isTinyBlobFish) {
@@ -184,13 +183,16 @@
             return this;
         }
 
+        // now send in chunked sizes
+        var bytesPerChunk = Math.ceil(blobFishSize / self._postConfig.uploadMaxFileSize),
+            numberOfFormSubmission = Math.ceil(self._postConfig.maxFileUploads / bytesPerChunk);
+        //  self._postConfig.maxFileUploads
+        // @todo code here next
 
-        // blobFishSize < self._postConfig.postMaxSize &&
+        console.log(numberOfFormSubmission,bytesPerChunk, self._postConfig.maxFileUploads, self._postConfig);
 
-
-        var dataForm = self._createFormData(postData);
-
-        self._sendPost(dataForm);
+//        var dataForm = self._createFormData(postData);
+//        self._sendPost(dataForm);
 
         return this;
     };
