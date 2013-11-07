@@ -9,7 +9,8 @@
 (function () {
     'use strict';
 
-    var _tagTipCollection = {};
+    var _tagTipCollection = {},
+        _translations = {};
 
     /**
      *
@@ -67,37 +68,12 @@
     function MassActionGalleryButton(globalConfig) {
         var self = this;
         self._globalConfig = globalConfig;
-        self._$progressElement = self._initProgressElement();
         self._$button = self._initMassActionButton();
-        self._$button.insert(self._$progressElement);
         return this;
     }
 
     MassActionGalleryButton.prototype = {
 
-        _initProgressElement: function () {
-            var progressElement = new Element('progress', {
-                'max': 1,
-                'value': 0,
-                'style': 'margin-left: 5px;'
-            }); // not DRY
-            progressElement.update('0%'); // for older browser ... ? ;-)
-            progressElement.hide();
-            return progressElement;
-        },
-
-        /**
-         * this methods runs every 50ms
-         * @param $progressElement Element
-         * @param percentComplete float
-         * @private
-         */
-        _intervalProgress: function (percentComplete) {
-            var self = this,
-                percentage = Math.round(percentComplete * 100);
-            self._$progressElement.value = percentComplete;
-            self._$progressElement.update(percentage + '%'); // for older browser ... ? ;-)
-        },
         /**
          *
          * @private
@@ -262,8 +238,9 @@
         self._globalConfig = {
             uploadUrl: _checkHttp(config.uploadUrl || false),
             galleryUrl: _checkHttp(config.galleryUrl || false),
-            form_key: config.form_key || false
-//            reMarkedCfg: decodeURIComponent(config.rmc || '{}').evalJSON(true)
+            form_key: config.form_key || false,
+            post: config.post || {}
+//            paramXYZ: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
         return this;
     };
@@ -274,7 +251,7 @@
      * @private
      */
     PicturePerfect.prototype._isFileReaderEnabled = function () {
-        return window.FileReader !== undefined;
+        return window.FileReader !== undefined && window.FormData !== undefined;
     };
 
     /**
@@ -294,6 +271,11 @@
             self._initConfig();
             self._initFileReaderOnTableRows();
             var mag = new MassActionGalleryButton(self._globalConfig);
+
+            // @todo bug when searching the grid changes and the button goes away
+            $('productGrid').observe('change', function (event) {
+                console.log('productGrid', event);
+            });
         };
     };
 
@@ -532,7 +514,7 @@
                 'name': file.name,
                 'extra': file.extra
             }),
-            'binaryData': encode_base64(event.target.result)
+            'binaryData': new window.Blob([event.target.result], { type: 'application/octet-stream'})  //encode_base64(event.target.result)
         });
     };
 
@@ -557,6 +539,8 @@
         if (undefined === encode_base64) {
             // @todo check for using: send(Blob) or send(ArrayBuffer)
             // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
+            // https://developer.mozilla.org/en-US/docs/Web/Guide/Using_FormData_Objects
+            // var newSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
             return console.log('js:FileReader not available because method encode_base64() is missing!');
         }
 

@@ -88,7 +88,15 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
      */
     public function catalogProductGalleryAction()
     {
+        phpinfo(); exit;
+        var_export($_POST);
+        echo "\n\n";
+        var_export($_FILES);
+        exit;
+
+        /** @var SchumacherFM_PicturePerfect_Helper_Data $helper */
         $helper = Mage::helper('pictureperfect');
+
         $return = array(
             'err'    => TRUE,
             'msg'    => $helper->__('An error occurred.'),

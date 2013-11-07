@@ -94,4 +94,65 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     {
         return Mage::getBaseDir() . DS . 'var' . DS . 'pictureperfect' . DS;
     }
+
+    /**
+     * @return int
+     */
+    public function getUploadMaxFileSize()
+    {
+        return $this->convertCfgVarToBytes(ini_get('upload_max_filesize'));
+    }
+
+    /**
+     * @return int
+     */
+    public function getPostMaxSize()
+    {
+        return $this->convertCfgVarToBytes(ini_get('post_max_size'));
+    }
+
+    /**
+     * if 0 then disabled ...
+     *
+     * @return int
+     */
+    public function getMaxFileUploads()
+    {
+        return (int)ini_get('max_file_uploads');
+    }
+
+    /**
+     * @param $val
+     *
+     * @return int
+     */
+    public function convertCfgVarToBytes($val)
+    {
+        $val = trim($val);
+        if (empty($val)) {
+            return 0;
+        }
+
+        preg_match('~([0-9]+)[\s]*([a-z]+)~i', $val, $matches);
+
+        $last = '';
+        if (isset($matches[2])) {
+            $last = $matches[2];
+        }
+
+        if (isset($matches[1])) {
+            $val = (int)$matches[1];
+        }
+
+        switch (substr(strtolower($last), 0, 1)) {
+            case 'g':
+                $val *= 1024;
+            case 'm':
+                $val *= 1024;
+            case 'k':
+                $val *= 1024;
+        }
+
+        return (int)$val;
+    }
 }

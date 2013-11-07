@@ -35,7 +35,7 @@
         ];
         self._initTransport();
         return this;
-    };
+    }
 
     /**
      *
@@ -138,22 +138,20 @@
     /**
      *
      * @param postObject
-     * @returns {string}
+     * @returns {FormData}
      * @private
      */
-    PicturePerfectXhr.prototype._toQueryString = function (postObject) {
-        function toQueryPair(key, value) {
-            return key + '=' + encodeURIComponent(value).replace(/%20/g, '+');
-        }
+    PicturePerfectXhr.prototype._createFormData = function (postObject) {
 
-        var queryValues = [];
+        var dataForm = new win.FormData();
+
         for (var key in postObject) {
             if (postObject.hasOwnProperty(key)) {
                 var value = postObject[key];
-                queryValues.push(toQueryPair(key, value));
+                dataForm.append(key, value);
             }
         }
-        return queryValues.join('&');
+        return dataForm;
     }
 
     /**
@@ -167,11 +165,10 @@
             throw new Error('postData is not an object/array', postData);
         }
 
-        var params = self._toQueryString(postData);
+        var dataForm = self._createFormData(postData);
 
         self._xhr.open('post', self._url, true); // 3rd param async === true
-        self._xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-        self._xhr.send(params);
+        self._xhr.send(dataForm);
         return this;
     };
 

@@ -14,10 +14,16 @@ class SchumacherFM_PicturePerfect_Block_Adminhtml_Config extends Mage_Adminhtml_
      */
     protected function _getConfig()
     {
-        $config               = array();
-        $config['uploadUrl']  = $this->getUrl('*/picturePerfect/catalogProductGallery');
-        $config['galleryUrl'] = $this->getUrl('*/picturePerfect/catalogProductGetGalleryByIds');
-        $config['form_key']   = Mage::getSingleton('core/session')->getFormKey();
+        $config = array(
+            'uploadUrl'  => $this->getUrl('*/picturePerfect/catalogProductGallery'),
+            'galleryUrl' => $this->getUrl('*/picturePerfect/catalogProductGetGalleryByIds'),
+            'form_key'   => Mage::getSingleton('core/session')->getFormKey(),
+            'post' => array(
+                'postMaxSize'       => Mage::helper('pictureperfect')->getPostMaxSize(),
+                'uploadMaxFileSize' => Mage::helper('pictureperfect')->getUploadMaxFileSize(),
+                'maxFileUploads'    => Mage::helper('pictureperfect')->getMaxFileUploads(),
+            ),
+        );
         return Zend_Json_Encoder::encode($config);
     }
 

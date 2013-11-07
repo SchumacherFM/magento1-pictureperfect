@@ -8,6 +8,10 @@ Why do I need this?
 
 Simplify the upload process of photos.
 
+Upload any size of a photo. You are only limited to the PHP setting: except max_input_time.
+
+No additional configuration of PHP necessary!
+
 Configuration
 -------------
 
