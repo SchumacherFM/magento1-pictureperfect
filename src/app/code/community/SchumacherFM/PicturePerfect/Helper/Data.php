@@ -96,11 +96,16 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
+     * if php incorrect configured that upload_max_filesize > post_max_size
+     * then return post_max_size
+     *
      * @return int
      */
     public function getUploadMaxFileSize()
     {
-        return $this->convertCfgVarToBytes(ini_get('upload_max_filesize'));
+        $return = $this->convertCfgVarToBytes(ini_get('upload_max_filesize'));
+        $pms    = $this->getPostMaxSize();
+        return $return > $pms ? $pms-1 : $return;
     }
 
     /**

@@ -456,42 +456,47 @@
     PicturePerfect.prototype._fileReaderEventLoad = function (event, file, $secondTd, $progressElement, productId) {
 
         var self = this,
-            ajaxRequest = new PicturePerfectXhr(self._globalConfig.uploadUrl, {
-                onSuccess: function (event, xhrObj) {
-                    var response = event.srcElement || event.target,
-                        result = {};
+            postConfig = self._globalConfig.post,
+            ajaxRequest = {};
 
-                    try {
-                        result = JSON.parse(response.responseText);
-                    } catch (e) {
-                        return self._handleError($secondTd, {
-                            alert: 'js:An error occurred. Tried to parse JSON response which could not be in JSON format.',
-                            log: ['js:Invalid responseText in JSON', e, response]
-                        });
-                    }
+        postConfig.checkForChunkFieldName = 'binaryData';
+
+        ajaxRequest = new PicturePerfectXhr(self._globalConfig.uploadUrl, {
+            onSuccess: function (event, xhrObj) {
+                var response = event.srcElement || event.target,
+                    result = {};
+
+                try {
+                    result = JSON.parse(response.responseText);
+                } catch (e) {
+                    return self._handleError($secondTd, {
+                        alert: 'js:An error occurred. Tried to parse JSON response which could not be in JSON format.',
+                        log: ['js:Invalid responseText in JSON', e, response]
+                    });
+                }
 
 
-                    if (result && _isObject(result)) {
-                        if (result.err === false) {
-                            $secondTd.removeClassName('fReaderError');
-                            $secondTd.addClassName('fReaderSuccess');
-                            console.debug('Upload result: ', result);
-                            self._updateTagTip(event, file, self._currentTrIndex, result.images, productId);
-                        } else {
-                            self._handleError($secondTd, {
-                                alert: 'js:An error occurred:\n' + result.msg
-                            });
-                        }
+                if (result && _isObject(result)) {
+                    if (result.err === false) {
+                        $secondTd.removeClassName('fReaderError');
+                        $secondTd.addClassName('fReaderSuccess');
+                        console.debug('Upload result: ', result);
+                        self._updateTagTip(event, file, self._currentTrIndex, result.images, productId);
                     } else {
                         self._handleError($secondTd, {
-                            alert: 'js:An error occurred after uploading. No JSON found ...'
+                            alert: 'js:An error occurred:\n' + result.msg
                         });
                     }
-                },
-                onFailure: function () {
-                    $secondTd.addClassName('fReaderError');
+                } else {
+                    self._handleError($secondTd, {
+                        alert: 'js:An error occurred after uploading. No JSON found ...'
+                    });
                 }
-            });
+            },
+            onFailure: function () {
+                $secondTd.addClassName('fReaderError');
+            }
+        }, postConfig);
 
         ajaxRequest
             .addUploadEvent('progress', function (event) {

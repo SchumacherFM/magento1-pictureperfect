@@ -88,7 +88,6 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
      */
     public function catalogProductGalleryAction()
     {
-        phpinfo(); exit;
         var_export($_POST);
         echo "\n\n";
         var_export($_FILES);
@@ -109,6 +108,11 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         /** @var Mage_Catalog_Model_Product $product */
         $product    = Mage::getModel('catalog/product')->load($productId);
         $binaryData = base64_decode($this->getRequest()->getParam('binaryData', ''));
+
+        if($binaryData === 'chunked'){
+// merge files
+        }
+
         $file       = json_decode($this->getRequest()->getParam('file', '[]'), TRUE);
         $fileName   = preg_replace('~[^\w\.\-_\(\)@#]+~i', '', isset($file['name']) ? $file['name'] : '');
 
