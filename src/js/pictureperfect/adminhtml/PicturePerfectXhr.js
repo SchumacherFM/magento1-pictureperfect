@@ -34,7 +34,7 @@
             'abort',
             'timeout'
         ];
-        self.fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
+        self._fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
 
         self._initTransport();
         return this;
@@ -144,16 +144,24 @@
      * @returns {FormData}
      * @private
      */
-    PicturePerfectXhr.prototype._createFormData = function (postObject) {
+    PicturePerfectXhr.prototype._createFormData = function () {
 
-        var dataForm = new win.FormData();
+        var args = Array.prototype.slice.call(arguments);
 
-        for (var key in postObject) {
-            if (postObject.hasOwnProperty(key)) {
-                var value = postObject[key];
-                dataForm.append(key, value);
+        var dataForm = new win.FormData(),
+            blobFileName = Math.random().toString(36).substring(7);
+
+        args.forEach(function (postObject) {
+
+            for (var key in postObject) {
+                if (postObject.hasOwnProperty(key)) {
+                    var value = postObject[key];
+                    dataForm.append(key, value, (value instanceof win.Blob ? blobFileName : null));
+                }
             }
-        }
+
+        });
+
         return dataForm;
     };
 
@@ -184,15 +192,36 @@
         }
 
         // now send in chunked sizes
-        var bytesPerChunk = Math.ceil(blobFishSize / self._postConfig.uploadMaxFileSize),
-            numberOfFormSubmission = Math.ceil(self._postConfig.maxFileUploads / bytesPerChunk);
+        var numberOfFiles = Math.ceil(blobFishSize / self._postConfig.uploadMaxFileSize),
+            numberOfFormSubmission = Math.ceil(numberOfFiles / self._postConfig.maxFileUploads),
+            numberOfFilePerFormSubmission = Math.ceil(numberOfFiles / numberOfFormSubmission);
         //  self._postConfig.maxFileUploads
         // @todo code here next
 
-        console.log(numberOfFormSubmission,bytesPerChunk, self._postConfig.maxFileUploads, self._postConfig);
+        console.log(numberOfFormSubmission, numberOfFiles, self._postConfig.maxFileUploads, self._postConfig);
 
-//        var dataForm = self._createFormData(postData);
-//        self._sendPost(dataForm);
+        delete postData[self._postConfig.checkForChunkFieldName];
+        postData.uploadInfo = JSON.stringify({
+            formSubmissions: numberOfFormSubmission,
+            totalFiles: numberOfFiles
+        });
+        var blobPostData = {};
+        var dataForm = {};
+        var newIndex = '', fStart = 0, fEnd = 0;
+        for (var submissionCount = 1; submissionCount <= numberOfFormSubmission; submissionCount++) {
+
+            blobPostData = {};
+            for (var fileCount = 1; fileCount <= numberOfFilePerFormSubmission; fileCount++) {
+                newIndex = self._postConfig.checkForChunkFieldName + '[' + submissionCount + '_' + fileCount + ']';
+                fEnd = fileCount * self._postConfig.uploadMaxFileSize;
+                blobPostData[newIndex] = self._fileSlice.call(blobFish, fStart, fEnd);
+                fStart = fEnd;
+            }
+
+            dataForm = self._createFormData(postData, blobPostData);
+            self._sendPost(dataForm);
+        }
+
 
         return this;
     };
