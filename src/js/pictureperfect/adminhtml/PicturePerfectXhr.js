@@ -16,15 +16,12 @@
      * @param callBackObject
      * @constructor
      */
-    function PicturePerfectXhr(url, callBackObject, postConfig) {
+    function PicturePerfectXhr(url) {
         var self = this;
         self._xhr = {};
         self._url = url;
-        self._postConfig = postConfig || {};
-        self._callbackSuccess = callBackObject.onSuccess || function () {
-        };
-        self._callbackFailure = callBackObject.onFailure || function () {
-        };
+        self._callbacksSuccess = [];
+        self._callbacksFailure = [];
         self._upDownEvents = [
             'loadstart',
             'progress',
@@ -34,7 +31,6 @@
             'abort',
             'timeout'
         ];
-        self._fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
 
         self._initTransport();
         return this;
@@ -42,10 +38,35 @@
 
     /**
      *
+     * @param callBack
+     * @returns {PicturePerfectXhr}
+     */
+    PicturePerfectXhr.prototype.done = function (callBack) {
+        if (callBack instanceof Function) {
+            this._callbacksSuccess.push(callBack);
+        }
+        return this;
+    };
+
+    /**
+     *
+     * @param callBack
+     * @returns {PicturePerfectXhr}
+     */
+    PicturePerfectXhr.prototype.fail = function (callBack) {
+        if (callBack instanceof Function) {
+            this._callbacksFailure.push(callBack);
+        }
+        return this;
+    };
+    /**
+     *
      * @private
      */
     PicturePerfectXhr.prototype._initTransport = function () {
         var self = this,
+            i = 0,
+            len = 0,
             versions = ['MSXML2.XmlHttp.5.0',
                 'MSXML2.XmlHttp.4.0',
                 'MSXML2.XmlHttp.3.0',
@@ -56,7 +77,7 @@
             self._xhr = new win.XMLHttpRequest();
         } else {
 
-            for (var i = 0, len = versions.length; i < len; i++) {
+            for (i = 0, len = versions.length; i < len; ++i) {
                 try {
                     self._xhr = new win.ActiveXObject(versions[i]);
                     break;
@@ -81,12 +102,18 @@
         }
 
         if (self._xhr.status !== 200) {
-            self._callbackFailure(self._xhr.status * -1, event, self._xhr);
+            self._callbacksFailure.forEach(function (callBack) {
+                callBack.apply(self, [event, self._xhr.status * -1]);
+            });
             return;
         }
 
         if (self._xhr.readyState === 4) {
-            self._callbackSuccess(event, self._xhr);
+//            self._callbackSuccess(event, self._xhr);
+            self._callbacksSuccess.forEach(function (callBack) {
+                callBack.apply(self, [event]);
+            });
+
             return;
         }
     }
@@ -149,7 +176,7 @@
         var args = Array.prototype.slice.call(arguments);
 
         var dataForm = new win.FormData(),
-            blobFileName = Math.random().toString(36).substring(7);
+            blobFileName = 'pp_' + Math.random().toString(36).substring(7);
 
         args.forEach(function (postObject) {
 
@@ -176,77 +203,14 @@
             throw new Error('postData is not an object/array', postData);
         }
 
-
-        var blobFish = postData[self._postConfig.checkForChunkFieldName] || {},
-            isBlobFish = (blobFish instanceof win.Blob),
-            blobFishSize = isBlobFish ? blobFish.size : 0,
-            postMaxSizeOpt = self._postConfig.postMaxSize - self._getNonBinaryFormLength(postData),
-        // uploadMaxFileSize must be always smaller than postMaxSize
-            isTinyBlobFish = blobFishSize < self._postConfig.uploadMaxFileSize && blobFishSize < postMaxSizeOpt;
-
-
-        // if not a blob found or blob size smaller than php post max size, then go
-        if (false === isBlobFish || true === isTinyBlobFish) {
-            self._sendPost(self._createFormData(postData));
-            return this;
-        }
-
-        // now send in chunked sizes
-        var numberOfFiles = Math.ceil(blobFishSize / self._postConfig.uploadMaxFileSize),
-            numberOfFormSubmission = Math.ceil(numberOfFiles / self._postConfig.maxFileUploads),
-            numberOfFilePerFormSubmission = Math.ceil(numberOfFiles / numberOfFormSubmission);
-        //  self._postConfig.maxFileUploads
-        // @todo code here next
-
-        console.log(numberOfFormSubmission, numberOfFiles, self._postConfig.maxFileUploads, self._postConfig);
-
-        delete postData[self._postConfig.checkForChunkFieldName];
-        postData.uploadInfo = JSON.stringify({
-            formSubmissions: numberOfFormSubmission,
-            totalFiles: numberOfFiles
-        });
-        var blobPostData = {};
-        var dataForm = {};
-        var newIndex = '', fStart = 0, fEnd = 0;
-        for (var submissionCount = 1; submissionCount <= numberOfFormSubmission; submissionCount++) {
-
-            blobPostData = {};
-            for (var fileCount = 1; fileCount <= numberOfFilePerFormSubmission; fileCount++) {
-                newIndex = self._postConfig.checkForChunkFieldName + '[' + submissionCount + '_' + fileCount + ']';
-                fEnd = fileCount * self._postConfig.uploadMaxFileSize;
-                blobPostData[newIndex] = self._fileSlice.call(blobFish, fStart, fEnd);
-                fStart = fEnd;
-            }
-
-            dataForm = self._createFormData(postData, blobPostData);
-            self._sendPost(dataForm);
-        }
-
-
+        self._sendPost(postData instanceof FormData ? postData : self._createFormData(postData));
         return this;
     };
 
     /**
      *
-     * @param postObject
-     * @returns {Number}
-     * @private
-     */
-    PicturePerfectXhr.prototype._getNonBinaryFormLength = function (postObject) {
-        var self = this,
-            lengthArray = [];
-
-        for (var key in postObject) {
-            if (postObject.hasOwnProperty(key) && key !== self._postConfig.checkForChunkFieldName) {
-                lengthArray.push(JSON.stringify({key: postObject[key]}));
-            }
-        }
-        return Math.ceil(lengthArray.join('&').length * 1.05); // plus 5%
-    }
-
-    /**
-     *
      * @param dataForm
+     * @param iteration
      * @private
      */
     PicturePerfectXhr.prototype._sendPost = function (dataForm) {

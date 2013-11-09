@@ -88,6 +88,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
      */
     public function catalogProductGalleryAction()
     {
+
         var_export($_POST);
         echo "\n\n";
         var_export($_FILES);

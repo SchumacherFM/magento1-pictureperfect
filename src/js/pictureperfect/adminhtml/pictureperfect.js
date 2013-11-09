@@ -220,6 +220,7 @@
         self._tableColumnCount = 10;
         self._currentTrIndex = 0;
         self._previousTrIndex = 0;
+        self._fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
         return this;
     }
 
@@ -242,6 +243,8 @@
             post: config.post || {}
 //            paramXYZ: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
+        Object.extend(self._globalConfig.post, {checkForChunkFieldName: 'binaryData'});
+
         return this;
     };
 
@@ -453,74 +456,168 @@
 
     };
 
-    PicturePerfect.prototype._fileReaderEventLoad = function (event, file, $secondTd, $progressElement, productId) {
+    /**
+     *
+     * @param binaryString
+     * @param nonBinaryFormLength integer
+     * @returns {{blobber: Array, size: number, isTiny: boolean}}
+     * @private
+     */
+    PicturePerfect.prototype._getBlob = function (binaryString, nonBinaryFormLength) {
+        var self = this,
+            numberOfFiles = 0,
+            fi = 0,
+            fsStart = 0,
+            fsEnd = self._globalConfig.post.uploadMaxFileSize,
+            newBlob = new window.Blob([binaryString], { type: 'application/octet-stream'}),
+            blobSlicedContainer = [],
+            blobFish = {
+                blobber: [],
+                'size': newBlob.size,
+                'totalFiles': 0,
+                fileName: 'pp_' + Math.random().toString(36).substring(7),
+                isTiny: newBlob.size < self._globalConfig.post.uploadMaxFileSize && newBlob.size < (self._globalConfig.post.postMaxSize - nonBinaryFormLength)
+            };
+
+        numberOfFiles = Math.ceil(blobFish.size / self._globalConfig.post.uploadMaxFileSize);
+
+        for (fi = 0; fi < numberOfFiles; fi = fi + 1) {
+            blobSlicedContainer.push(self._fileSlice.call(newBlob, fsStart, fsEnd));
+            fsStart = fsEnd;
+            fsEnd = fsStart + self._globalConfig.post.uploadMaxFileSize;
+        }
+
+        // creating an array. each index is a single request
+        // first dim request, second dim -> all the blobs per request
+        blobFish.blobber = blobSlicedContainer.eachSlice(self._globalConfig.post.maxFileUploads);
+        blobFish.totalFiles = numberOfFiles;
+        return blobFish;
+    };
+
+    /**
+     *
+     * @param args object => event, file, $secondTd, $progressElement, productId
+     * @private
+     */
+    PicturePerfect.prototype._fileReaderEventLoad = function (args) {
 
         var self = this,
-            postConfig = self._globalConfig.post,
+            postData = {
+                'form_key': self._globalConfig.form_key,
+                'productId': args.productId,
+                'file': JSON.stringify({
+                    'name': args.file.name,
+                    'extra': args.file.extra
+                }),
+                'binaryData': ''
+            },
+            blobFish = self._getBlob(args.event.target.result, self._getNonBinaryFormLength(postData));
+
+        postData.bdReqCount = blobFish.blobber.length; // number of total request made for upload
+        postData.bdTotalFiles = blobFish.totalFiles;
+
+        // if there is only one file to upload just go and return
+        if (true === blobFish.isTiny) {
+            delete args.event;
+            postData.binaryData = blobFish.blobber[0][0];
+            Object.extend(args, {'postData': postData});
+            self._fileReaderHandleSingleRequest(args);
+            return this;
+        }
+
+        // handle multiple requests
+
+
+    };
+
+    /**
+     *
+     * @param postObject
+     * @returns {Number}
+     * @private
+     */
+    PicturePerfect.prototype._getNonBinaryFormLength = function (postObject) {
+        var self = this,
+            lengthArray = [];
+
+        for (var key in postObject) {
+            if (postObject.hasOwnProperty(key) && key !== self._globalConfig.post.checkForChunkFieldName) {
+                lengthArray.push(JSON.stringify({key: postObject[key]}));
+            }
+        }
+        return Math.ceil(lengthArray.join('&').length * 1.03); // plus 3%
+    }
+
+    /**
+     *
+     * @param args object -> postData, file, $secondTd, $progressElement, productId
+     * @private
+     */
+    PicturePerfect.prototype._fileReaderHandleSingleRequest = function (args) {
+        console.log('_fileReaderHandleSingleRequest', args);
+        var singleReqSelf = this,
             ajaxRequest = {};
 
-        postConfig.checkForChunkFieldName = 'binaryData';
+        function xhrSuccess(event) {
+            var response = event.srcElement || event.target,
+                result = {};
 
-        ajaxRequest = new PicturePerfectXhr(self._globalConfig.uploadUrl, {
-            onSuccess: function (event, xhrObj) {
-                var response = event.srcElement || event.target,
-                    result = {};
-
-                try {
-                    result = JSON.parse(response.responseText);
-                } catch (e) {
-                    return self._handleError($secondTd, {
-                        alert: 'js:An error occurred. Tried to parse JSON response which could not be in JSON format.',
-                        log: ['js:Invalid responseText in JSON', e, response]
-                    });
-                }
-
-
-                if (result && _isObject(result)) {
-                    if (result.err === false) {
-                        $secondTd.removeClassName('fReaderError');
-                        $secondTd.addClassName('fReaderSuccess');
-                        console.debug('Upload result: ', result);
-                        self._updateTagTip(event, file, self._currentTrIndex, result.images, productId);
-                    } else {
-                        self._handleError($secondTd, {
-                            alert: 'js:An error occurred:\n' + result.msg
-                        });
-                    }
-                } else {
-                    self._handleError($secondTd, {
-                        alert: 'js:An error occurred after uploading. No JSON found ...'
-                    });
-                }
-            },
-            onFailure: function () {
-                $secondTd.addClassName('fReaderError');
+            try {
+                result = JSON.parse(response.responseText);
+            } catch (e) {
+                return singleReqSelf._handleError(args.$secondTd, {
+                    alert: 'js:An error occurred. Tried to parse JSON response which could not be in JSON format.',
+                    log: ['js:Invalid responseText in JSON', e, response]
+                });
             }
-        }, postConfig);
+
+
+            if (result && _isObject(result)) {
+                if (result.err === false) {
+                    args.$secondTd.removeClassName('fReaderError');
+                    args.$secondTd.addClassName('fReaderSuccess');
+                    console.debug('Upload result: ', result);
+                    singleReqSelf._updateTagTip(event, args.file, singleReqSelf._currentTrIndex, result.images, args.productId);
+                } else {
+                    singleReqSelf._handleError(args.$secondTd, {
+                        alert: 'js:An error occurred:\n' + result.msg
+                    });
+                }
+            } else {
+                singleReqSelf._handleError(args.$secondTd, {
+                    alert: 'js:An error occurred after uploading. No JSON found ...'
+                });
+            }
+        }
+
+        function xhrFail(event, status) {
+            console.log('onFailure', status, event);
+            args.$secondTd.addClassName('fReaderError');
+        }
+
+        function uploadProgress(event) {
+            var percentComplete = 0.00001;
+            if (event.lengthComputable) {
+                percentComplete = event.loaded / event.total;
+                singleReqSelf._intervalProgress(args.$progressElement, percentComplete);
+            }
+            // else: Unable to compute progress information since the total size is unknown
+        }
+
+        function uploadLoadend(event) {
+            args.$progressElement.hide();
+            args.$progressElement.value = 0;
+        }
+
+
+        ajaxRequest = new PicturePerfectXhr(singleReqSelf._globalConfig.uploadUrl);
 
         ajaxRequest
-            .addUploadEvent('progress', function (event) {
-                var percentComplete = 0.00001;
-                if (event.lengthComputable) {
-                    percentComplete = event.loaded / event.total;
-                    self._intervalProgress($progressElement, percentComplete);
-                }
-                // else: Unable to compute progress information since the total size is unknown
-            })
-            .addUploadEvent('loadend', function (event) {
-                $progressElement.hide();
-                $progressElement.value = 0;
-            });
-
-        ajaxRequest.sendPost({
-            'form_key': self._globalConfig.form_key,
-            'productId': productId,
-            'file': JSON.stringify({
-                'name': file.name,
-                'extra': file.extra
-            }),
-            'binaryData': new window.Blob([event.target.result], { type: 'application/octet-stream'})  //encode_base64(event.target.result)
-        });
+            .done(xhrSuccess)
+            .fail(xhrFail)
+            .addUploadEvent('progress', uploadProgress)
+            .addUploadEvent('loadend', uploadLoadend)
+            .sendPost(args.postData);
     };
 
     /**
@@ -566,7 +663,13 @@
                 dragleave: cfriSelf._fileReaderEventDragLeave.bindAsEventListener(cfriSelf),
                 beforestart: cfriSelf._fileReaderEventBeforeStart.bindAsEventListener(cfriSelf, $secondTd, $progressElement),
                 load: function (event, file) {
-                    cfriSelf._fileReaderEventLoad(event, file, $secondTd, $progressElement, productId);
+                    cfriSelf._fileReaderEventLoad({
+                        'event': event,
+                        'file': file,
+                        '$secondTd': $secondTd,
+                        '$progressElement': $progressElement,
+                        'productId': productId
+                    });
                 },
                 error: function (e, file) {
                     // Native ProgressEvent
