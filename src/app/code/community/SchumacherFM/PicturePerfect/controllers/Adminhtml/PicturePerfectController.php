@@ -89,11 +89,6 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
     public function catalogProductGalleryAction()
     {
 
-        var_export($_POST);
-        echo "\n\n";
-        var_export($_FILES);
-        exit;
-
         /** @var SchumacherFM_PicturePerfect_Helper_Data $helper */
         $helper = Mage::helper('pictureperfect');
 
@@ -104,54 +99,87 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             'images' => FALSE
         );
 
-        $productId = (int)$this->getRequest()->getParam('productId', 0);
+        $file         = json_decode($this->getRequest()->getParam('file', '[]'), TRUE);
+        $productId    = (int)$this->getRequest()->getParam('productId', 0);
+        $bdReqCount   = (int)$this->getRequest()->getParam('bdReqCount', 0);
+        $bdTotalFiles = (int)$this->getRequest()->getParam('bdTotalFiles', 0);
 
-        /** @var Mage_Catalog_Model_Product $product */
-        $product    = Mage::getModel('catalog/product')->load($productId);
-        $binaryData = base64_decode($this->getRequest()->getParam('binaryData', ''));
+        $tmpFileNames = $this->getUploadedFilesNames();
 
-        if($binaryData === 'chunked'){
-// merge files
+        if (TRUE === is_string($tmpFileNames)) {
+            $return['msg'] = $tmpFileNames;
+            return $this->_setReturn($return);
         }
 
-        $file       = json_decode($this->getRequest()->getParam('file', '[]'), TRUE);
-        $fileName   = preg_replace('~[^\w\.\-_\(\)@#]+~i', '', isset($file['name']) ? $file['name'] : '');
-
-        if (empty($fileName) || empty($binaryData) || empty($file) || empty($productId)) {
-            $return['msg'] = $helper->__('Either fileName or binaryData or file is empty ...');
+        if (empty($tmpFileNames) || empty($file) || empty($productId)) {
+            $return['msg'] = $helper->__('Either fileName or binaryData or file or productId is empty ...');
             Mage::log(array(
                 'catalogProductGalleryAction',
-                $fileName,
-                empty($binaryData) ? '$binaryData empty' : '$binaryData available',
+                $tmpFileNames,
                 $file,
                 $productId
             ));
             return $this->_setReturn($return, TRUE);
         }
 
-        $io          = new Varien_Io_File();
-        $tempStorage = Mage::helper('pictureperfect')->getTempStorage();
+        // single file upload
+        if (count($tmpFileNames) === 1 && $bdReqCount === 1) {
 
-        if ($io->checkAndCreateFolder($tempStorage)) {
-            $result = (int)file_put_contents($tempStorage . $fileName, $binaryData); // io->write will not work :-(
-            if ($result > 10) {
-                $return['err'] = FALSE;
-                $return['msg'] = $helper->__('Upload successful for image: %s', $fileName);
-                $return['fn']  = $fileName;
+            $fullImagePath = $helper->mergeAndMove($tmpFileNames, isset($file['name']) ? $file['name'] : uniqid('pp_failed_'));
+
+            if (FALSE === $fullImagePath) {
+                $return['msg'] = $helper->__('Cannot merge and move uploaded file/s!');
+                return $this->_setReturn($return, TRUE);
             }
+
+//            var_export($tmpFileNames);
+//            echo "\n\n";
+//            var_export($fullImagePath);
+//            echo "\n\n";
+//            var_export($file);
+//            echo "\n\n";
+
+            $return['err'] = FALSE;
+            $return['msg'] = $helper->__('Upload successful for image: %s', basename($fullImagePath));
+            $return['fn']  = basename($fullImagePath);
+            $return        = $this->_addImageToProductGallery($return, $fullImagePath, $productId);
+            return $this->_setReturn($return, TRUE);
         }
 
+        // multiple req uploads
+        var_export($_POST);
+        echo "\n\n";
+        var_export($_FILES);
+        exit;
+    }
+
+    /**
+     * @param array $return
+     * @param       $fullImagePath
+     * @param       $productId
+     *
+     * @return array
+     */
+    protected function _addImageToProductGallery(array $return, $fullImagePath, $productId)
+    {
+        /** @var Mage_Catalog_Model_Product $product */
+        $product = Mage::getModel('catalog/product')->load($productId);
+
+//        var_export($fullImagePath);
+//        echo "\n\n";
+//        var_export(getimagesize($fullImagePath));
+//        echo "\n\n";
+
         try {
-            $product->addImageToMediaGallery($tempStorage . $fileName, NULL, TRUE, FALSE);
+            $product->addImageToMediaGallery($fullImagePath, NULL, TRUE, FALSE);
             $product->getResource()->save($product); // bypassing observer
             $return['images'] = $this->_getResizedGalleryImages($product);
         } catch (Exception $e) {
             $return['err'] = TRUE;
-            $return['msg'] = $helper->__('Error in saving the image: %s for productId: %s', $fileName, $productId);
+            $return['msg'] = Mage::helper('pictureperfect')->__('Error in saving the image: %s for productId: %s', $fullImagePath, $productId);
             Mage::logException($e);
         }
-
-        $this->_setReturn($return, TRUE);
+        return $return;
     }
 
     /**
@@ -173,9 +201,43 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
 
             $image['fileSize']       = $fileSize;
             $image['fileSizePretty'] = Mage::helper('pictureperfect')->getPrettySize($fileSize);
-            $image['widthHeight']    = Mage::helper('pictureperfect')->getImageWithHeight($catalogImage);
-            $image['label']          = htmlspecialchars($image['label']);
+            try {
+                $image['widthHeight'] = Mage::helper('pictureperfect')->getImageWithHeight($catalogImage);
+            } catch (Exception $e) {
+                Mage::logException($e);
+                $image['widthHeight'] = 'error!';
+            }
+
+            $image['label'] = htmlspecialchars($image['label']);
         }
         return $images;
+    }
+
+    /**
+     * @return array|string success array and on error a string
+     */
+    protected function getUploadedFilesNames()
+    {
+        if (empty($_FILES) || !isset($_FILES['binaryData']) || empty($_FILES['binaryData']) || !is_array($_FILES['binaryData']['name'])) {
+            return Mage::helper('pictureperfect')->__('No file found that should have been uploaded');
+        }
+
+        /**
+         * Varien_File_Uploader cannot handle arrays ... like we are using here
+         */
+        $tempStorage = Mage::helper('pictureperfect')->getTempStorage();
+        $fileNames   = array();
+        foreach ($_FILES['binaryData']['error'] as $index => $error) {
+            if ($error !== UPLOAD_ERR_OK) {
+                return Mage::helper('pictureperfect')->__('An upload error occurred for file: ' . $_FILES['binaryData']['name'][$index]);
+            }
+
+            $res = move_uploaded_file($_FILES['binaryData']['tmp_name'][$index], $tempStorage . $_FILES['binaryData']['name'][$index]);
+            if (FALSE === $res) {
+                return Mage::helper('pictureperfect')->__('An upload error occurred during moving for file: ' . $_FILES['binaryData']['name'][$index]);
+            }
+            $fileNames[] = $tempStorage . $_FILES['binaryData']['name'][$index];
+        } //endForeach
+        return $fileNames;
     }
 }

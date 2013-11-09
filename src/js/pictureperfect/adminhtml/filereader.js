@@ -26,7 +26,7 @@
         opts: {
             dragClass: "drag",
             accept: false,
-            readAsDefault: 'BinaryString',
+            readAsDefault: 'ArrayBuffer',
             readAsMap: {
                 'image/*': 'DataURL',
                 'text/*': 'Text'

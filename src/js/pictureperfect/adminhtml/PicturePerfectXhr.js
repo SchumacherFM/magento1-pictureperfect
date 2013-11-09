@@ -173,17 +173,21 @@
      */
     PicturePerfectXhr.prototype._createFormData = function () {
 
-        var args = Array.prototype.slice.call(arguments);
-
-        var dataForm = new win.FormData(),
-            blobFileName = 'pp_' + Math.random().toString(36).substring(7);
+        var args = Array.prototype.slice.call(arguments),
+            dataForm = new win.FormData(),
+            value;
 
         args.forEach(function (postObject) {
 
             for (var key in postObject) {
                 if (postObject.hasOwnProperty(key)) {
-                    var value = postObject[key];
-                    dataForm.append(key, value, (value instanceof win.Blob ? blobFileName : null));
+                    value = postObject[key];
+
+                    if (typeof value === 'object' && value.content && value.content instanceof win.Blob) {
+                        dataForm.append(key, value.content, value.filename);
+                    } else {
+                        dataForm.append(key, value);
+                    }
                 }
             }
 

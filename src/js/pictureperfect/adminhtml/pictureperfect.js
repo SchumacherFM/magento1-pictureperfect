@@ -243,7 +243,6 @@
             post: config.post || {}
 //            paramXYZ: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
-        Object.extend(self._globalConfig.post, {checkForChunkFieldName: 'binaryData'});
 
         return this;
     };
@@ -469,13 +468,13 @@
             fi = 0,
             fsStart = 0,
             fsEnd = self._globalConfig.post.uploadMaxFileSize,
-            newBlob = new window.Blob([binaryString], { type: 'application/octet-stream'}),
+            newBlob = new window.Blob([binaryString], { type: 'image/jpg'}),
             blobSlicedContainer = [],
             blobFish = {
                 blobber: [],
                 'size': newBlob.size,
                 'totalFiles': 0,
-                fileName: 'pp_' + Math.random().toString(36).substring(7),
+                tmpFileName: 'pp_' + Math.random().toString(36).substring(7),
                 isTiny: newBlob.size < self._globalConfig.post.uploadMaxFileSize && newBlob.size < (self._globalConfig.post.postMaxSize - nonBinaryFormLength)
             };
 
@@ -509,9 +508,9 @@
                     'name': args.file.name,
                     'extra': args.file.extra
                 }),
-                'binaryData': ''
+                'binaryData[]': {}
             },
-            blobFish = self._getBlob(args.event.target.result, self._getNonBinaryFormLength(postData));
+            blobFish = self._getBlob((args.event.target || args.event.srcElement).result, self._getNonBinaryFormLength(postData));
 
         postData.bdReqCount = blobFish.blobber.length; // number of total request made for upload
         postData.bdTotalFiles = blobFish.totalFiles;
@@ -519,7 +518,8 @@
         // if there is only one file to upload just go and return
         if (true === blobFish.isTiny) {
             delete args.event;
-            postData.binaryData = blobFish.blobber[0][0];
+            postData['binaryData[]'].content = blobFish.blobber[0][0];
+            postData['binaryData[]'].filename = blobFish.tmpFileName + '__1_1.bin';
             Object.extend(args, {'postData': postData});
             self._fileReaderHandleSingleRequest(args);
             return this;
@@ -538,15 +538,16 @@
      */
     PicturePerfect.prototype._getNonBinaryFormLength = function (postObject) {
         var self = this,
-            lengthArray = [];
+            lengthArray = [],
+            key = '';
 
-        for (var key in postObject) {
-            if (postObject.hasOwnProperty(key) && key !== self._globalConfig.post.checkForChunkFieldName) {
+        for (key in postObject) {
+            if (postObject.hasOwnProperty(key)) {
                 lengthArray.push(JSON.stringify({key: postObject[key]}));
             }
         }
         return Math.ceil(lengthArray.join('&').length * 1.03); // plus 3%
-    }
+    };
 
     /**
      *
@@ -554,7 +555,7 @@
      * @private
      */
     PicturePerfect.prototype._fileReaderHandleSingleRequest = function (args) {
-        console.log('_fileReaderHandleSingleRequest', args);
+
         var singleReqSelf = this,
             ajaxRequest = {};
 
@@ -621,6 +622,7 @@
     };
 
     /**
+     * @see http://stackoverflow.com/questions/7431365/filereader-readasbinarystring-to-upload-files
      *
      * @param trElement current TR
      * @param productId
@@ -638,25 +640,18 @@
         $secondTd = $secondTd[1] || {}; // used for the icons to place them in the background
         $secondTd.insert($progressElement);
 
-        if (undefined === encode_base64) {
-            // @todo check for using: send(Blob) or send(ArrayBuffer)
-            // https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest
-            // https://developer.mozilla.org/en-US/docs/Web/Guide/Using_FormData_Objects
-            // var newSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
-            return console.log('js:FileReader not available because method encode_base64() is missing!');
-        }
-
         if (0 === productId) {
             return console.log('js:productId is 0 cannot instantiate fileReader', trElement);
         }
+
 
         FileReaderJS.setupDrop(trElement, {
             dragClass: 'fReaderDrag',
             accept: 'image/*',
             readAsMap: {
-                'image/*': 'BinaryString'
+                'image/*': 'ArrayBuffer'
             },
-            readAsDefault: 'BinaryString',
+            readAsDefault: 'ArrayBuffer',
             on: {
 
                 dragenter: cfriSelf._fileReaderEventDragEnter.bindAsEventListener(cfriSelf),
@@ -677,9 +672,9 @@
                     alert('js:An error occurred. Please see console.log');
                     return console.log('error: ', e, file);
                 },
-                skip: function (e, file) {
+                skip: function (event) {
                     $secondTd.addClassName('fReaderError');
-                    return console.log('js:File format is not supported', file);
+                    return console.log('js:File format is not supported', event);
                 }
             }
         });
