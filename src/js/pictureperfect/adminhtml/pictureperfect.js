@@ -507,24 +507,35 @@
                 'file': JSON.stringify({
                     'name': args.file.name,
                     'extra': args.file.extra
-                }),
-                'binaryData[]': {}
+                })
             },
             blobFish = self._getBlob((args.event.target || args.event.srcElement).result, self._getNonBinaryFormLength(postData));
 
         postData.bdReqCount = blobFish.blobber.length; // number of total request made for upload
         postData.bdTotalFiles = blobFish.totalFiles;
 
+        console.log(blobFish, postData);
+
         // if there is only one file to upload just go and return
         if (true === blobFish.isTiny) {
             delete args.event;
-            postData['binaryData[]'].content = blobFish.blobber[0][0];
-            postData['binaryData[]'].filename = blobFish.tmpFileName + '__1_1.bin';
+            postData['binaryData[0]'].content = blobFish.blobber[0][0];
+            postData['binaryData[0]'].filename = blobFish.tmpFileName + '__1_1.bin';
             Object.extend(args, {'postData': postData});
             self._fileReaderHandleSingleRequest(args);
             return this;
         }
 
+        if (postData.bdReqCount === 1) {
+            return this;
+        }
+
+        if (postData.bdReqCount > 1) {
+            return this;
+        }
+
+        console.log('Something went terrible wrong with the blobFish!');
+        return this;
         // handle multiple requests
 
 
