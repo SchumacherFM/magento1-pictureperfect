@@ -9,6 +9,21 @@
 (function () {
     'use strict';
 
+    /**
+     * Hack ...
+     * @see http://jsbin.com/utuvu/1/edit for productGrid
+     */
+    Element.addMethods({
+        $update: Element.update,
+        update: function (elementArg, content) {
+            var element = $(elementArg);
+            element.$update(content);
+            element.fire('element:update');
+            return element;
+        }
+    });
+
+
     var _tagTipCollection = {},
         _translations = {};
 
@@ -68,7 +83,8 @@
     function MassActionGalleryButton(globalConfig) {
         var self = this;
         self._globalConfig = globalConfig;
-        self._$button = self._initMassActionButton();
+        self._productGrid = $('productGrid');
+        self._initMassActionButton();
         return this;
     }
 
@@ -80,16 +96,30 @@
          */
         _initMassActionButton: function () {
             var self = this,
-                button = new Element('button', {
-                    id: 'picturePerfectMassAction',
-                    'class': 'picturePerfect'
-                });
-            $$('.filter-actions')[0].insert(button);
+                button = $$('.picturePerfectMassAction');
 
-            button
-                .update('Load Gallery Images')
-                .observe('click', self._massEventClickLoadGalleryButton.bindAsEventListener(self));
-            return button;
+            button.each(function (buttonElement) {
+                // @todo bug, does not trigger then click when content-header-floating is active, AKA scroll down
+                buttonElement.observe('click', self._massEventClickLoadGalleryButton.bindAsEventListener(self));
+            });
+
+            /**
+             * HACK
+             * http://jsbin.com/utuvu/1/edit
+             * whenever someone clicks search in catalog->product->grid the grid will reload
+             * via ajax and event listeners will be lost. so after an update has been done
+             * we assign the new element to the property that the click even can work
+             * still buggy ...
+             */
+            self._productGrid.observe('element:update', function (event) {
+                var target = event.srcElement || event.target;
+                if ('productGrid' === target.id) {
+                    self._productGrid = target;
+                    _tagTipCollection = {};
+                }
+            });
+
+            return this;
         },
 
         /**
@@ -114,8 +144,8 @@
          * @private
          */
         _getMassActionCheckboxValues: function () {
-            var result = [];
-            $$('input[class~="massaction-checkbox"]').each(function (element) {
+            var self = this, result = [];
+            self._productGrid.select('input[class~="massaction-checkbox"]').each(function (element) {
                 if (true === element.checked) {
                     result.push(parseInt(element.value, 10));
                 }
@@ -158,8 +188,8 @@
                 return console.error(jsonResponse);
             }
 
+            self._productGrid.select('#productGrid_table tbody tr').each(function (element, index) {
 
-            $$('#productGrid_table tbody tr').each(function (element, index) {
                 if (index === 0) {
                     _tableColumnCount = element.cells.length || 10;
                 }
@@ -273,11 +303,6 @@
             self._initConfig();
             self._initFileReaderOnTableRows();
             var mag = new MassActionGalleryButton(self._globalConfig);
-
-            // @todo bug when searching the grid changes and the button goes away
-            $('productGrid').observe('change', function (event) {
-                console.log('productGrid', event);
-            });
         };
     };
 
@@ -519,8 +544,10 @@
         // if there is only one file to upload just go and return
         if (true === blobFish.isTiny) {
             delete args.event;
-            postData['binaryData[0]'].content = blobFish.blobber[0][0];
-            postData['binaryData[0]'].filename = blobFish.tmpFileName + '__1_1.bin';
+            postData['binaryData[0]'] = {
+                content: blobFish.blobber[0][0],
+                filename: blobFish.tmpFileName + '__1_1.bin'
+            };
             Object.extend(args, {'postData': postData});
             self._fileReaderHandleSingleRequest(args);
             return this;

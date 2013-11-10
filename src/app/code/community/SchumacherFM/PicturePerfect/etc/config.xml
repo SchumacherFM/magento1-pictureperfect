@@ -54,7 +54,14 @@
             </modules>
         </translate>
         <events>
-
+            <adminhtml_widget_container_html_before>
+                <observers>
+                    <schumacherfm_pictureperfect_add_load_gallery>
+                        <class>SchumacherFM_PicturePerfect_Model_Observer_AdminHtmlWidget</class>
+                        <method>insertLoadGalleryButton</method>
+                    </schumacherfm_pictureperfect_add_load_gallery>
+                </observers>
+            </adminhtml_widget_container_html_before>
         </events>
     </adminhtml>
     <default>
