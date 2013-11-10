@@ -61,6 +61,7 @@
 }
 
 .ppC-progressbar {
+    display          : none;
     margin           : 2px 1px;
     background-color : black;
     border-radius    : 7px; /* (height of inner div) / 2 + padding */

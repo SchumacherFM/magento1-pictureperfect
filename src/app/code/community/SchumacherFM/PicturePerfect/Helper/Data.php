@@ -184,7 +184,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
         if (TRUE === $preDeleteTarget) {
             @unlink($tempStorage . $fileName); // remove target before starting
         }
-
+        
         foreach ($tmpFileNames as $tmpFile) {
             $result = $this->_mergeFile($tmpFile, $tempStorage . $fileName);
             if (FALSE === $result) {

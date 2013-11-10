@@ -20,6 +20,7 @@
         var self = this;
         self._xhr = {};
         self._url = url;
+        self._callbacksBefore = [];
         self._callbacksSuccess = [];
         self._callbacksFailure = [];
         self._upDownEvents = [
@@ -35,6 +36,18 @@
         self._initTransport();
         return this;
     }
+
+    /**
+     *
+     * @param callBack
+     * @returns {PicturePerfectXhr}
+     */
+    PicturePerfectXhr.prototype.before = function (callBack) {
+        if (callBack instanceof Function) {
+            this._callbacksBefore.push(callBack);
+        }
+        return this;
+    };
 
     /**
      *
@@ -206,6 +219,10 @@
         if (Object.prototype.toString.call(postData) !== '[object Object]') {
             throw new Error('postData is not an object/array', postData);
         }
+
+        self._callbacksBefore.forEach(function (callBack) {
+            callBack();
+        });
 
         self._sendPost(postData instanceof FormData ? postData : self._createFormData(postData));
         return this;

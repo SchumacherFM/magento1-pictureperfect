@@ -244,67 +244,78 @@
      * @returns {ProgressElement}
      * @constructor
      */
-    function ProgressElement(cssClass) {
-        cssClass = cssClass || '';
+    function ProgressElement(numOfSteps) {
+
         this._$innerDiv = new Element('div', {
-            'style': 'background-color: ' + ('#' + ((1 << 24) * Math.random() | 0).toString(16))
+            'style': 'background-color: ' + this._getColor(50, numOfSteps)
         });
-        this._$innerDiv.update('0%');
+        this._$innerDiv.update('<div>&nbsp;0%</div>');
         this._progressElement = new Element('div', {
-            'class': 'ppC-progressbar ' + cssClass
+            'class': 'ppC-progressbar '
         });
         this._progressElement.insert(this._$innerDiv);
-        this._progressElement.hide();
         return this;
     }
 
-    /**
-     *
-     * @returns {HTMLElement|*}
-     */
-    ProgressElement.prototype.getElement = function () {
-        return this._progressElement;
+    ProgressElement.prototype = {
+
+        _getColor: function (numOfSteps, step) {
+            //            return ('#' + ((1 << 24) * Math.random() | 0).toString(16));
+            // @see http://stackoverflow.com/questions/1484506/random-color-generator-in-javascript
+            // This function generates vibrant, "evenly spaced" colours (i.e. no clustering). This is ideal for creating easily distinguishable vibrant markers in Google Maps and other apps.
+            // Adam Cole, 2011-Sept-14
+            // HSV to RBG adapted from: http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
+            var r, g, b;
+            var h = step / numOfSteps;
+            var i = ~~(h * 6);
+            var f = h * 6 - i;
+            var q = 1 - f;
+            switch (i % 6) {
+                case 0:
+                    r = 1, g = f, b = 0;
+                    break;
+                case 1:
+                    r = q, g = 1, b = 0;
+                    break;
+                case 2:
+                    r = 0, g = 1, b = f;
+                    break;
+                case 3:
+                    r = 0, g = q, b = 1;
+                    break;
+                case 4:
+                    r = f, g = 0, b = 1;
+                    break;
+                case 5:
+                    r = 1, g = 0, b = q;
+                    break;
+            }
+            var c = "#" + ("00" + (~~(r * 255)).toString(16)).slice(-2) + ("00" + (~~(g * 255)).toString(16)).slice(-2) + ("00" + (~~(b * 255)).toString(16)).slice(-2);
+            return (c);
+        },
+        getElement: function () {
+            return this._progressElement;
+        },
+        show: function () {
+            this._progressElement.setStyle({display: 'block'});
+            return this;
+        },
+        hide: function () {
+            this._progressElement.setStyle({display: 'none'});
+            return this;
+        },
+        remove: function () {
+            this._progressElement.remove();
+            return this;
+        },
+        interval: function (percentComplete) {
+            var percentage = Math.round(percentComplete * 100);
+            this._$innerDiv.setStyle({'width': percentage + '%'});
+            this._$innerDiv.update('<div>' + percentage + '%</div>');
+            return this;
+        }
     };
 
-    /**
-     *
-     * @returns {ProgressElement}
-     */
-    ProgressElement.prototype.show = function () {
-        this._progressElement.show();
-        return this;
-    };
-
-    /**
-     *
-     * @returns {ProgressElement}
-     */
-    ProgressElement.prototype.hide = function () {
-        this._progressElement.hide();
-        return this;
-    };
-
-    /**
-     *
-     * @returns {ProgressElement}
-     */
-    ProgressElement.prototype.remove = function () {
-        this._progressElement.remove();
-        return this;
-    };
-
-    /**
-     * this methods runs every 50ms
-     *
-     * @param percentComplete float
-     * @returns {ProgressElement}
-     */
-    ProgressElement.prototype.interval = function (percentComplete) {
-        var percentage = Math.round(percentComplete * 100);
-        this._$innerDiv.setStyle({'width': percentage + '%'});
-        this._$innerDiv.update('<div>' + percentage + '%</div>');
-        return this;
-    };
 
     /**
      *
@@ -583,7 +594,6 @@
             }
         }
         return ret;
-
     };
 
     /**
@@ -628,8 +638,8 @@
                     };
                 });
             }
-            args.postData = postData;
-            self._fileReaderHandleSingleRequest(args);
+//            args.postData = postData;
+            self._fileReaderHandleSingleRequest(args).sendPost(postData);
             return this;
         }
 
@@ -641,6 +651,7 @@
             blobFish.blobber.forEach(function (blobsPerRequest, requestIndex) {
                 var reqIndex = requestIndex + 1,
                     partialFileNameReq = self._numberPad(reqIndex),
+                    xhrObj = {},
                     postDataCloned = Object.clone(postData);
 
                 blobsPerRequest.forEach(function (theBlob, blobIndex) {
@@ -651,10 +662,13 @@
                         filename: blobFish.tmpFileName + '__' + partialFileNameReq + '_' + self._numberPad(blobFileIndex) + '.bin'
                     };
                 });
-                args.postData = postDataCloned;
+//                args.postData = postDataCloned;
                 args.tmpFileNamePrefix = blobFish.tmpFileName;
-                self._fileReaderHandleSingleRequest(args);
+                xhrObj = self._fileReaderHandleSingleRequest(args);
+                xhrObj.sendPost(postDataCloned);
+
             });
+
             return this;
         }
 
@@ -684,10 +698,13 @@
 
         var singleReqSelf = this,
             ajaxRequest = {},
-            $progressElement = new ProgressElement();
+            $progressElement = new ProgressElement(parseInt(Math.random() * 100, 10));
 
         args.$secondTd.insert($progressElement.getElement());
-        $progressElement.show();
+
+        function xhrBefore() {
+            $progressElement.show();
+        }
 
         function xhrSuccess(event) { // @todo refactor
             var response = event.srcElement || event.target,
@@ -752,13 +769,15 @@
             // $progressElement.remove();
         }
 
-        ajaxRequest = new PicturePerfectXhr(singleReqSelf._globalConfig.uploadUrl + '?rand=' + Math.random().toString(36).substring(10));
+        ajaxRequest = new PicturePerfectXhr(this._globalConfig.uploadUrl + '?rand=' + Math.random().toString(36).substring(10));
         ajaxRequest
+            .before(xhrBefore)
             .done(xhrSuccess)
             .fail(xhrFail)
             .addUploadEvent('progress', uploadProgress)
-            .addUploadEvent('loadend', uploadLoadend)
-            .sendPost(args.postData);
+            .addUploadEvent('loadend', uploadLoadend);
+//            .sendPost(args.postData);
+        return ajaxRequest;
     };
 
     /**
