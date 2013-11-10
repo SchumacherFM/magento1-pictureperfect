@@ -490,6 +490,9 @@
     PicturePerfect.prototype._getBlob = function (binaryString, nonBinaryFormLength) {
         var self = this,
             numberOfFiles = 0,
+            numberOfFilesAllowedPerReq = 0,
+            maxFilesPerReq = 0,
+            _postMaxSize = (self._globalConfig.post.postMaxSize - nonBinaryFormLength),
             fi = 0,
             fsStart = 0,
             fsEnd = self._globalConfig.post.uploadMaxFileSize,
@@ -500,7 +503,7 @@
                 'size': newBlob.size,
                 'totalFiles': 0,
                 tmpFileName: 'pp_' + Math.random().toString(36).substring(7),
-                isTiny: newBlob.size < self._globalConfig.post.uploadMaxFileSize && newBlob.size < (self._globalConfig.post.postMaxSize - nonBinaryFormLength)
+                isTiny: newBlob.size < self._globalConfig.post.uploadMaxFileSize && newBlob.size < _postMaxSize
             };
 
         numberOfFiles = Math.ceil(blobFish.size / self._globalConfig.post.uploadMaxFileSize);
@@ -513,7 +516,11 @@
 
         // creating an array. each index is a single request
         // first dim request, second dim -> all the blobs per request
-        blobFish.blobber = blobSlicedContainer.eachSlice(self._globalConfig.post.maxFileUploads);
+        numberOfFilesAllowedPerReq = Math.floor(_postMaxSize / self._globalConfig.post.uploadMaxFileSize);
+        maxFilesPerReq = numberOfFilesAllowedPerReq < self._globalConfig.post.maxFileUploads
+            ? numberOfFilesAllowedPerReq
+            : self._globalConfig.post.maxFileUploads;
+        blobFish.blobber = blobSlicedContainer.eachSlice(maxFilesPerReq);
         blobFish.totalFiles = numberOfFiles;
         return blobFish;
     };
@@ -538,26 +545,37 @@
 
         postData.bdReqCount = blobFish.blobber.length; // number of total request made for upload
         postData.bdTotalFiles = blobFish.totalFiles;
+        delete args.event;
 
-        console.log(blobFish, postData);
+        /**
+         * one request and n file/s to post
+         */
+        if (postData.bdReqCount === 1) {
 
-        // if there is only one file to upload just go and return
-        if (true === blobFish.isTiny) {
-            delete args.event;
-            postData['binaryData[0]'] = {
-                content: blobFish.blobber[0][0],
-                filename: blobFish.tmpFileName + '__1_1.bin'
-            };
+            if (true === blobFish.isTiny) {
+                postData['binaryData[1]'] = {
+                    content: blobFish.blobber[0][0],
+                    filename: blobFish.tmpFileName + '__' + postData.bdReqCount + '_1.bin'
+                };
+            } else {
+                blobFish.blobber[0].forEach(function (theBlob, index) {
+                    var fileIndex = index + 1;
+                    postData['binaryData[' + fileIndex + ']'] = {
+                        content: theBlob,
+                        filename: blobFish.tmpFileName + '__' + postData.bdReqCount + '_' + fileIndex + '.bin'
+                    };
+                });
+            }
             Object.extend(args, {'postData': postData});
             self._fileReaderHandleSingleRequest(args);
             return this;
         }
 
-        if (postData.bdReqCount === 1) {
-            return this;
-        }
-
+        /**
+         * multiple request with multiple files
+         */
         if (postData.bdReqCount > 1) {
+            console.log('postData req > 1', postData);
             return this;
         }
 
@@ -575,16 +593,7 @@
      * @private
      */
     PicturePerfect.prototype._getNonBinaryFormLength = function (postObject) {
-        var self = this,
-            lengthArray = [],
-            key = '';
-
-        for (key in postObject) {
-            if (postObject.hasOwnProperty(key)) {
-                lengthArray.push(JSON.stringify({key: postObject[key]}));
-            }
-        }
-        return Math.ceil(lengthArray.join('&').length * 1.03); // plus 3%
+        return Math.ceil(JSON.stringify(postObject).length * 1.03); // plus 3%
     };
 
     /**

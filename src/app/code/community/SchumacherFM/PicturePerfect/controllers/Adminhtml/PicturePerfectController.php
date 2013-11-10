@@ -122,8 +122,8 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             return $this->_setReturn($return, TRUE);
         }
 
-        // single file upload
-        if (count($tmpFileNames) === 1 && $bdReqCount === 1) {
+        // one request but 1 to many files
+        if ($bdReqCount === 1) {
 
             $fullImagePath = $helper->mergeAndMove($tmpFileNames, isset($file['name']) ? $file['name'] : uniqid('pp_failed_'));
 
@@ -131,13 +131,6 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
                 $return['msg'] = $helper->__('Cannot merge and move uploaded file/s!');
                 return $this->_setReturn($return, TRUE);
             }
-
-//            var_export($tmpFileNames);
-//            echo "\n\n";
-//            var_export($fullImagePath);
-//            echo "\n\n";
-//            var_export($file);
-//            echo "\n\n";
 
             $return['err'] = FALSE;
             $return['msg'] = $helper->__('Upload successful for image: %s', basename($fullImagePath));
