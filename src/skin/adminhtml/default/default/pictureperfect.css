@@ -32,8 +32,9 @@
     margin     : 2px 0 0 0;
     text-align : center;
 }
+
 .ppC .txt.label {
-    font-weight: bold;
+    font-weight : bold;
 }
 
 .fReaderDrag td {
@@ -57,4 +58,25 @@
     background-image    : url("images/error_msg_icon.gif");
     background-repeat   : no-repeat;
     background-position : left top;
+}
+
+.ppC-progressbar {
+    margin           : 2px 1px;
+    background-color : black;
+    border-radius    : 7px; /* (height of inner div) / 2 + padding */
+    padding          : 1px;
+}
+
+.ppC-progressbar > div {
+    background-color : orange;
+    width            : 0%; /* Adjust with JavaScript */
+    height           : 10px;
+    border-radius    : 5px;
+    text-align       : center;
+}
+
+.ppC-progressbar > div > div {
+    color       : white;
+    font-size   : 10px;
+    line-height : 10px;
 }

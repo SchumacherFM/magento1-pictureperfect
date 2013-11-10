@@ -240,6 +240,73 @@
     };
 
     /**
+     * @todo refactor to a div element ...
+     * @returns {ProgressElement}
+     * @constructor
+     */
+    function ProgressElement(cssClass) {
+        cssClass = cssClass || '';
+        this._$innerDiv = new Element('div', {
+            'style': 'background-color: ' + ('#' + ((1 << 24) * Math.random() | 0).toString(16))
+        });
+        this._$innerDiv.update('0%');
+        this._progressElement = new Element('div', {
+            'class': 'ppC-progressbar ' + cssClass
+        });
+        this._progressElement.insert(this._$innerDiv);
+        this._progressElement.hide();
+        return this;
+    }
+
+    /**
+     *
+     * @returns {HTMLElement|*}
+     */
+    ProgressElement.prototype.getElement = function () {
+        return this._progressElement;
+    };
+
+    /**
+     *
+     * @returns {ProgressElement}
+     */
+    ProgressElement.prototype.show = function () {
+        this._progressElement.show();
+        return this;
+    };
+
+    /**
+     *
+     * @returns {ProgressElement}
+     */
+    ProgressElement.prototype.hide = function () {
+        this._progressElement.hide();
+        return this;
+    };
+
+    /**
+     *
+     * @returns {ProgressElement}
+     */
+    ProgressElement.prototype.remove = function () {
+        this._progressElement.remove();
+        return this;
+    };
+
+    /**
+     * this methods runs every 50ms
+     *
+     * @param percentComplete float
+     * @returns {ProgressElement}
+     */
+    ProgressElement.prototype.interval = function (percentComplete) {
+        var percentage = Math.round(percentComplete * 100);
+        this._$innerDiv.setStyle({'width': percentage + '%'});
+        this._$innerDiv.update('<div>' + percentage + '%</div>');
+        return this;
+    };
+
+    /**
      *
      * @returns {*}
      * @constructor
@@ -367,37 +434,13 @@
 
     /**
      *
-     * @param productId
+     * @param secondTd
+     * @param msgObj
      * @returns {*}
      * @private
      */
-    PicturePerfect.prototype._getProgressElement = function () {
-        var progressElement = new Element('progress', {'max': 1, 'value': 0});
-        progressElement.update('0%'); // for older browser ... ? ;-)
-        progressElement.hide();
-        return progressElement;
-    };
-
-    /**
-     * this methods runs every 50ms
-     * @param $progressElement Element
-     * @param percentComplete float
-     * @private
-     */
-    PicturePerfect.prototype._intervalProgress = function ($progressElement, percentComplete) {
-        $progressElement.value = percentComplete;
-        var percentage = Math.round(percentComplete * 100);
-        $progressElement.update(percentage + '%'); // for older browser ... ? ;-)
-    };
-
-    /**
-     *
-     * @param secondTd
-     * @param msgObj
-     * @private
-     */
     PicturePerfect.prototype._handleError = function (secondTd, msgObj) {
-        var self = this;
+        var self = this, ret = null;
 
         if (msgObj.alert) {
             alert(msgObj.alert);
@@ -406,10 +449,11 @@
         secondTd.addClassName('fReaderError');
 
         if (msgObj.log) {
-            return console.log(msgObj.log);
+            ret = console.log(msgObj.log);
         } else {
-            return;
+            ret = null;
         }
+        return ret;
     };
 
     /**
@@ -469,15 +513,12 @@
      *
      * @param event
      * @param $secondTd element
-     * @param $progressElement
      * @private
      */
-    PicturePerfect.prototype._fileReaderEventBeforeStart = function (event, $secondTd, $progressElement) {
+    PicturePerfect.prototype._fileReaderEventBeforeStart = function (event, $secondTd) {
         var self = this;
         $secondTd.removeClassName('fReaderError');
         $secondTd.removeClassName('fReaderSuccess');
-        $progressElement.show();
-
     };
 
     /**
@@ -527,12 +568,33 @@
 
     /**
      *
-     * @param args object => event, file, $secondTd, $progressElement, productId
+     * @param aNumber
+     * @returns {string}
+     * @private
+     */
+    PicturePerfect.prototype._numberPad = function (aNumber) {
+        var ret = '' + aNumber,
+            totalLength = 3,
+            padString = '0',
+            i = 0;
+        if (ret.length < totalLength) {
+            for (i = ret.length; i <= totalLength; i = i + 1) {
+                ret = padString + ret;
+            }
+        }
+        return ret;
+
+    };
+
+    /**
+     *
+     * @param args object => event, file, $secondTd, productId
      * @private
      */
     PicturePerfect.prototype._fileReaderEventLoad = function (args) {
 
         var self = this,
+            partialFileNameReq = '',
             postData = {
                 'form_key': self._globalConfig.form_key,
                 'productId': args.productId,
@@ -551,22 +613,22 @@
          * one request and n file/s to post
          */
         if (postData.bdReqCount === 1) {
-
-            if (true === blobFish.isTiny) {
+            partialFileNameReq = self._numberPad(postData.bdReqCount);
+            if (true === blobFish.isTiny) { // one file
                 postData['binaryData[1]'] = {
                     content: blobFish.blobber[0][0],
-                    filename: blobFish.tmpFileName + '__' + postData.bdReqCount + '_1.bin'
+                    filename: blobFish.tmpFileName + '__' + partialFileNameReq + '_' + self._numberPad(1) + '.bin'
                 };
             } else {
-                blobFish.blobber[0].forEach(function (theBlob, index) {
+                blobFish.blobber[0].forEach(function (theBlob, index) { // n files
                     var fileIndex = index + 1;
                     postData['binaryData[' + fileIndex + ']'] = {
                         content: theBlob,
-                        filename: blobFish.tmpFileName + '__' + postData.bdReqCount + '_' + fileIndex + '.bin'
+                        filename: blobFish.tmpFileName + '__' + partialFileNameReq + '_' + self._numberPad(fileIndex) + '.bin'
                     };
                 });
             }
-            Object.extend(args, {'postData': postData});
+            args.postData = postData;
             self._fileReaderHandleSingleRequest(args);
             return this;
         }
@@ -575,7 +637,24 @@
          * multiple request with multiple files
          */
         if (postData.bdReqCount > 1) {
-            console.log('postData req > 1', postData);
+
+            blobFish.blobber.forEach(function (blobsPerRequest, requestIndex) {
+                var reqIndex = requestIndex + 1,
+                    partialFileNameReq = self._numberPad(reqIndex),
+                    postDataCloned = Object.clone(postData);
+
+                blobsPerRequest.forEach(function (theBlob, blobIndex) {
+                    var blobFileIndex = blobIndex + 1;
+
+                    postDataCloned['binaryData[' + blobFileIndex + ']'] = {
+                        content: theBlob,
+                        filename: blobFish.tmpFileName + '__' + partialFileNameReq + '_' + self._numberPad(blobFileIndex) + '.bin'
+                    };
+                });
+                args.postData = postDataCloned;
+                args.tmpFileNamePrefix = blobFish.tmpFileName;
+                self._fileReaderHandleSingleRequest(args);
+            });
             return this;
         }
 
@@ -598,15 +677,19 @@
 
     /**
      *
-     * @param args object -> postData, file, $secondTd, $progressElement, productId
+     * @param args object -> postData, file, $secondTd, productId
      * @private
      */
     PicturePerfect.prototype._fileReaderHandleSingleRequest = function (args) {
 
         var singleReqSelf = this,
-            ajaxRequest = {};
+            ajaxRequest = {},
+            $progressElement = new ProgressElement();
 
-        function xhrSuccess(event) {
+        args.$secondTd.insert($progressElement.getElement());
+        $progressElement.show();
+
+        function xhrSuccess(event) { // @todo refactor
             var response = event.srcElement || event.target,
                 result = {};
 
@@ -619,47 +702,57 @@
                 });
             }
 
-
-            if (result && _isObject(result)) {
+            if (result && _isObject(result) && undefined === result.fileProgress) {
                 if (result.err === false) {
                     args.$secondTd.removeClassName('fReaderError');
                     args.$secondTd.addClassName('fReaderSuccess');
-                    console.debug('Upload result: ', result);
                     singleReqSelf._updateTagTip(event, args.file, singleReqSelf._currentTrIndex, result.images, args.productId);
                 } else {
                     singleReqSelf._handleError(args.$secondTd, {
                         alert: 'js:An error occurred:\n' + result.msg
                     });
                 }
+                $progressElement.remove();
+                return;
+            }
+
+            if (result && result.fileProgress !== undefined) {
+
+                if (result.fileProgress !== args.tmpFileNamePrefix) {
+                    alert('Something went wrong during upload. Please try again. See console.log.');
+                    console.log('Error: matching upload file not found:', result, args.tmpFileNamePrefix);
+                }
+                // do nothing ...
             } else {
+                console.log('result', result);
                 singleReqSelf._handleError(args.$secondTd, {
                     alert: 'js:An error occurred after uploading. No JSON found ...'
                 });
             }
+            $progressElement.remove();
+            return;
         }
 
         function xhrFail(event, status) {
             console.log('onFailure', status, event);
             args.$secondTd.addClassName('fReaderError');
+            $progressElement.remove();
         }
 
         function uploadProgress(event) {
             var percentComplete = 0.00001;
             if (event.lengthComputable) {
                 percentComplete = event.loaded / event.total;
-                singleReqSelf._intervalProgress(args.$progressElement, percentComplete);
+                $progressElement.interval(percentComplete);
             }
             // else: Unable to compute progress information since the total size is unknown
         }
 
         function uploadLoadend(event) {
-            args.$progressElement.hide();
-            args.$progressElement.value = 0;
+            // $progressElement.remove();
         }
 
-
-        ajaxRequest = new PicturePerfectXhr(singleReqSelf._globalConfig.uploadUrl);
-
+        ajaxRequest = new PicturePerfectXhr(singleReqSelf._globalConfig.uploadUrl + '?rand=' + Math.random().toString(36).substring(10));
         ajaxRequest
             .done(xhrSuccess)
             .fail(xhrFail)
@@ -680,17 +773,13 @@
         productId = parseInt(productId, 10);
         var
             cfriSelf = this,
-            $secondTd = trElement.select('td'),
-
-            $progressElement = cfriSelf._getProgressElement();
+            $secondTd = trElement.select('td');
 
         $secondTd = $secondTd[1] || {}; // used for the icons to place them in the background
-        $secondTd.insert($progressElement);
 
         if (0 === productId) {
             return console.log('js:productId is 0 cannot instantiate fileReader', trElement);
         }
-
 
         FileReaderJS.setupDrop(trElement, {
             dragClass: 'fReaderDrag',
@@ -703,13 +792,12 @@
 
                 dragenter: cfriSelf._fileReaderEventDragEnter.bindAsEventListener(cfriSelf),
                 dragleave: cfriSelf._fileReaderEventDragLeave.bindAsEventListener(cfriSelf),
-                beforestart: cfriSelf._fileReaderEventBeforeStart.bindAsEventListener(cfriSelf, $secondTd, $progressElement),
+                beforestart: cfriSelf._fileReaderEventBeforeStart.bindAsEventListener(cfriSelf, $secondTd),
                 load: function (event, file) {
                     cfriSelf._fileReaderEventLoad({
                         'event': event,
                         'file': file,
                         '$secondTd': $secondTd,
-                        '$progressElement': $progressElement,
                         'productId': productId
                     });
                 },
@@ -828,7 +916,8 @@
 
     document.observe('dom:loaded', pp.domLoaded());
 
-}).
+}
+    ).
     call(function () {
         return this || (typeof window !== 'undefined' ? window : global);
     }());

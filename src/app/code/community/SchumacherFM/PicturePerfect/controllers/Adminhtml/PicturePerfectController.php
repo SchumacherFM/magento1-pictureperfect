@@ -108,23 +108,49 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
 
         if (TRUE === is_string($tmpFileNames)) {
             $return['msg'] = $tmpFileNames;
-            return $this->_setReturn($return);
+            return $this->_setReturn($return, TRUE);
         }
 
-        if (empty($tmpFileNames) || empty($file) || empty($productId)) {
+        $uniqueFileName = $this->_getUploadFileBaseName($tmpFileNames);
+
+        if (empty($tmpFileNames) || empty($file) || empty($productId) || FALSE === $uniqueFileName) {
             $return['msg'] = $helper->__('Either fileName or binaryData or file or productId is empty ...');
             Mage::log(array(
                 'catalogProductGalleryAction',
                 $tmpFileNames,
+                $uniqueFileName,
                 $file,
                 $productId
             ));
             return $this->_setReturn($return, TRUE);
         }
 
+        if ($bdReqCount > 1) {
+            // multiple req uploads
+
+            $sessionDataKey = 'ppFileNames' . $uniqueFileName;
+            /** @var Mage_Adminhtml_Model_Session $session */
+            $session             = Mage::getSingleton('adminhtml/session');
+            $tmpFileNamesSession = $session->getData($sessionDataKey);
+            if (empty($tmpFileNamesSession)) {
+                $tmpFileNamesSession = $tmpFileNames;
+            } else {
+                $tmpFileNamesSession = array_merge($tmpFileNamesSession, $tmpFileNames);
+            }
+
+            if (count($tmpFileNamesSession) === $bdTotalFiles) {
+                $tmpFileNames = $tmpFileNamesSession;
+                $bdReqCount   = 1;
+                $session->unsetData($sessionDataKey);
+            } else {
+                $session->setData($sessionDataKey, $tmpFileNamesSession);
+                return $this->_setReturn(array('fileProgress' => $uniqueFileName), TRUE);
+            }
+        }
+
         // one request but 1 to many files
         if ($bdReqCount === 1) {
-
+            sort($tmpFileNames); // now that is important to restore the order after async upload!
             $fullImagePath = $helper->mergeAndMove($tmpFileNames, isset($file['name']) ? $file['name'] : uniqid('pp_failed_'));
 
             if (FALSE === $fullImagePath) {
@@ -137,13 +163,24 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             $return['fn']  = basename($fullImagePath);
             $return        = $this->_addImageToProductGallery($return, $fullImagePath, $productId);
             return $this->_setReturn($return, TRUE);
-        }
+        } else {
 
-        // multiple req uploads
-        var_export($_POST);
-        echo "\n\n";
-        var_export($_FILES);
-        exit;
+            $return['msg'] = $helper->__('No request found for processing...');
+            return $this->_setReturn($return, TRUE);
+        }
+    }
+
+    /**
+     * @param $tmpFileNames
+     *
+     * @return bool
+     */
+    protected function _getUploadFileBaseName($tmpFileNames)
+    {
+        $file    = current($tmpFileNames);
+        $matches = array();
+        preg_match('~/(pp_[a-z0-9]{5,})__~', $file, $matches);
+        return isset($matches[1]) ? $matches[1] : FALSE;
     }
 
     /**
@@ -212,6 +249,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
     protected function getUploadedFilesNames()
     {
         if (empty($_FILES) || !isset($_FILES['binaryData']) || empty($_FILES['binaryData']) || !is_array($_FILES['binaryData']['name'])) {
+            Mage::log($_FILES);
             return Mage::helper('pictureperfect')->__('No file found that should have been uploaded');
         }
 

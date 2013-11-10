@@ -176,12 +176,15 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      *
      * @return string|boolean
      */
-    public function mergeAndMove(array $tmpFileNames, $newFileName)
+    public function mergeAndMove(array $tmpFileNames, $newFileName, $preDeleteTarget = TRUE)
     {
         $tempStorage = Mage::helper('pictureperfect')->getTempStorage();
         $fileName    = preg_replace('~[^\w\.\-_\(\)@#]+~i', '', $newFileName);
 
-        @unlink($tempStorage . $fileName); // remove target before starting
+        if (TRUE === $preDeleteTarget) {
+            @unlink($tempStorage . $fileName); // remove target before starting
+        }
+
         foreach ($tmpFileNames as $tmpFile) {
             $result = $this->_mergeFile($tmpFile, $tempStorage . $fileName);
             if (FALSE === $result) {
