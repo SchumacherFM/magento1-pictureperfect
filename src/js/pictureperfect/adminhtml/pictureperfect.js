@@ -240,7 +240,7 @@
     };
 
     /**
-     * @todo refactor to a div element ...
+     * @thinkAbout http://css-tricks.com/html5-meter-element/
      * @returns {ProgressElement}
      * @constructor
      */
