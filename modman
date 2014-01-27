@@ -4,3 +4,4 @@ src/app/locale/en_US/SchumacherFM_PicturePerfect.csv app/locale/en_US/Schumacher
 src/app/locale/de_DE/SchumacherFM_PicturePerfect.csv app/locale/de_DE/SchumacherFM_PicturePerfect.csv
 src/app/design/adminhtml/default/default/layout/pictureperfect.xml app/design/adminhtml/default/default/layout/pictureperfect.xml
 src/js/pictureperfect js/pictureperfect
+src/skin/adminhtml/default/default/pictureperfect.css skin/adminhtml/default/default/pictureperfect.css

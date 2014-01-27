@@ -1,14 +1,26 @@
 <?xml version="1.0"?>
 <layout>
-    <!--@see SchumacherFM_PicturePerfect_Model_Observer_Adminhtml_LayoutUpdate-->
     <adminhtml_catalog_product_index>
         <reference name="head">
+            <action method="addJs">
+                <script>pictureperfect/adminhtml/PicturePerfectXhr.js</script>
+            </action>
             <action method="addJs">
                 <script>pictureperfect/adminhtml/filereader.js</script>
             </action>
             <action method="addJs">
                 <script>pictureperfect/adminhtml/pictureperfect.js</script>
             </action>
+            <action method="addItem">
+                <type>skin_css</type>
+                <name>pictureperfect.css</name>
+                <params/>
+            </action>
         </reference>
+
+        <reference name="js">
+            <block type="pictureperfect/adminhtml_config" name="pictureperfect_adminhtml_config"/>
+        </reference>
+
     </adminhtml_catalog_product_index>
 </layout>

@@ -3,10 +3,13 @@ Magento PicturePerfect Module
 
 PicturePerfect enables the Magento backend user to asynchronously upload multiple photos for different products via drag and drop.
 
+PicturePerfect bypasses all PHP based file upload limitations. The only limit is the speed and performance of your computer and of course
+the upload rate of your internet connection.
+
 Why do I need this?
 -------------------
 
-Asynchronous upload of multiple photos for different products via drag and drop.
+Asynchronous upload of multiple photos for multiple products via drag and drop.
 
 See the screencast:
 
@@ -32,16 +35,10 @@ Configuration
 
 All options can be set per store view.
 
-#### How to integrate pictureperfect into my module?
-
-...
-
 Todo
 ----
 
-- For version 3.0 replace the EpicEditor with StackEdit
-- For version 4.0 parallel support for Magento2
-- For version 5.0 drop Magento1 support
+-
 
 Installation Instructions
 -------------------------
@@ -50,7 +47,8 @@ Installation Instructions
 3. `modman init`
 4. `modman clone git://github.com/SchumacherFM/Magento-PicturePerfect.git`
 
-Please read the great article from Vinai: [Composer installation](http://magebase.com/magento-tutorials/composer-with-magento/)
+Composer based installation:  Please read the great article from
+Vinai [Composer installation](http://magebase.com/magento-tutorials/composer-with-magento/)
 
 About
 -----
