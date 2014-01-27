@@ -1,4 +1,11 @@
-<?xml version="1.0"?>
+<?xml version="1.0"?><!--
+/**
+ * @category    SchumacherFM_PicturePerfect
+ * @package     Helper
+ * @author      Cyrill at Schumacher dot fm / @SchumacherFM
+ * @copyright   Copyright (c) Please read the EULA
+ */
+-->
 <layout>
     <adminhtml_catalog_product_index>
         <reference name="head">

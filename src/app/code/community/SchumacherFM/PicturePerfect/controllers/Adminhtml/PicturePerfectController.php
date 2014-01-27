@@ -1,9 +1,10 @@
 <?php
+
 /**
  * @category    SchumacherFM_PicturePerfect
  * @package     Controller
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
- * @copyright   Copyright (c)
+ * @copyright   Copyright (c) Please read the EULA
  */
 class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mage_Adminhtml_Controller_Action
 {

@@ -2,7 +2,7 @@
  * @category    SchumacherFM_PicturePerfect
  * @package     JavaScript
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
- * @copyright   Copyright (c)
+ * @copyright   Copyright (c) Please read the EULA
  */
 /*global $,window,$$,marked,varienGlobalEvents,Ajax,FileReaderJS,Event,Element,encode_base64,PicturePerfectXhr*/
 ;
@@ -326,6 +326,7 @@
     function PicturePerfect() {
         var self = this;
         self._globalConfig = {};
+        self._translations = {};
         self._tableColumnCount = 10;
         self._currentTrIndex = 0;
         self._previousTrIndex = 0;
@@ -353,7 +354,17 @@
 //            paramXYZ: decodeURIComponent(config.rmc || '{}').evalJSON(true)
         };
 
+        self._translations = config.translations || {};
         return this;
+    };
+
+    /**
+     *
+     * @returns {boolean}
+     * @private
+     */
+    PicturePerfect.prototype.__ = function (translation) {
+        return this._translations[translation] || 'Translation Missing: ' + translation;
     };
 
     /**
@@ -414,7 +425,7 @@
                 columnCount: self._tableColumnCount,
                 productId: productId
             };
-        return new TagTip(trElement, 'Waiting for upload ...', _tipOptions);
+        return new TagTip(trElement, self.__('Waiting for upload ...'), _tipOptions);
     };
 
     /**
@@ -432,7 +443,7 @@
         var self = this,
             content = '';
 
-        content += 'js:PID: ' + productId + '; Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
+        content += self.__('Product ID:') + ' ' + productId + '; Uploaded: <strong>' + file.name + ' (' + file.extra.prettySize + ')</strong><br/>';
 
         images.forEach(function (image, index) {
             content += getTagTipTemplate(image);
@@ -715,8 +726,8 @@
                 result = JSON.parse(response.responseText);
             } catch (e) {
                 return singleReqSelf._handleError(args.$secondTd, {
-                    alert: 'js:An error occurred. Tried to parse JSON response which could not be in JSON format.',
-                    log: ['js:Invalid responseText in JSON', e, response]
+                    alert: singleReqSelf.__('An error occurred. Tried to parse JSON response which could not be in JSON format.'),
+                    log: [singleReqSelf.__('Invalid responseText in JSON'), e, response]
                 });
             }
 
@@ -727,28 +738,28 @@
                     singleReqSelf._updateTagTip(event, args.file, singleReqSelf._currentTrIndex, result.images, args.productId);
                 } else {
                     singleReqSelf._handleError(args.$secondTd, {
-                        alert: 'js:An error occurred:\n' + result.msg
+                        alert: singleReqSelf.__('An error occurred:') + '\n' + result.msg
                     });
                 }
                 $progressElement.remove();
-                return;
+                return null;
             }
 
             if (result && result.fileProgress !== undefined) {
 
                 if (result.fileProgress !== args.tmpFileNamePrefix) {
-                    alert('Something went wrong during upload. Please try again. See console.log.');
-                    console.log('Error: matching upload file not found:', result, args.tmpFileNamePrefix);
+                    alert(singleReqSelf.__('Something went wrong during upload. Please try again. See console.log.'));
+                    console.log(singleReqSelf.__('Error: matching upload file not found:'), result, args.tmpFileNamePrefix);
                 }
                 // do nothing ...
             } else {
                 console.log('result', result);
                 singleReqSelf._handleError(args.$secondTd, {
-                    alert: 'js:An error occurred after uploading. No JSON found ...'
+                    alert: singleReqSelf.__('An error occurred after uploading. No JSON found ...')
                 });
             }
             $progressElement.remove();
-            return;
+            return null;
         }
 
         function xhrFail(event, status) {
@@ -824,12 +835,12 @@
                 error: function (e, file) {
                     // Native ProgressEvent
                     $secondTd.addClassName('fReaderError');
-                    alert('js:An error occurred. Please see console.log');
+                    alert(cfriSelf.__('An error occurred. Please see console.log'));
                     return console.log('error: ', e, file);
                 },
                 skip: function (event) {
                     $secondTd.addClassName('fReaderError');
-                    return console.log('js:File format is not supported', event);
+                    return console.log(cfriSelf.__('File format is not supported'), event);
                 }
             }
         });

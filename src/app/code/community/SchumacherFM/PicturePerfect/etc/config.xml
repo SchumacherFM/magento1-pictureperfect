@@ -68,9 +68,7 @@
         <pictureperfect>
             <pictureperfect>
                 <enable>1</enable>
-
             </pictureperfect>
-
         </pictureperfect>
     </default>
     <phpunit>

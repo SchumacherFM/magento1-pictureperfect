@@ -1,9 +1,10 @@
 <?php
+
 /**
  * @category    SchumacherFM_PicturePerfect
- * @package     Helper
+ * @package     Model
  * @author      Cyrill at Schumacher dot fm / @SchumacherFM
- * @copyright   Copyright (c)
+ * @copyright   Copyright (c) Please read the EULA
  */
 class SchumacherFM_PicturePerfect_Model_Observer_AdminHtmlWidget
 {

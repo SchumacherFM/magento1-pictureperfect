@@ -38,7 +38,15 @@ All options can be set per store view.
 Todo
 ----
 
--
+- Upload images to a CDN via ftp/sftp/ssh
+- Product Detail Edit: add uploader either in its own tab or via a tiny field on top.
+
+Competitors
+-----------
+
+- Activo [Bulk Images Upload and SEO for Large Catalogs](http://www.magentocommerce.com/magento-connect/bulk-images-upload-and-seo-for-large-catalogs.html)
+- Amasty [AJAX Image Uploader](http://amasty.com/ajax-image-uploader.html)
+
 
 Installation Instructions
 -------------------------
