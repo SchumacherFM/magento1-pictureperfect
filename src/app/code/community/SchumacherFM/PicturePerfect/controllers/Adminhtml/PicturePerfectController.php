@@ -210,6 +210,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             $return['msg'] = Mage::helper('pictureperfect')->__('Error in saving the image: %s for productId: %s', $fullImagePath, $productId);
             Mage::logException($e);
         }
+
         return $return;
     }
 
@@ -224,22 +225,17 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         $baseDir = Mage::getSingleton('catalog/product_media_config')->getBaseMediaPath();
 
         foreach ($images as &$image) {
+
+            $currentImage = $baseDir . DS . $image['file'];
+            $fileSize     = Mage::helper('pictureperfect')->getFileSize($currentImage);
             /** @var Mage_Catalog_Helper_Image $catalogImage */
+            $catalogImage = Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
 
-            $fileSize         = Mage::helper('pictureperfect')->getFileSize($baseDir . DS . $image['file']);
-            $catalogImage     = Mage::helper('catalog/image')->init($product, 'thumbnail', $image['file'])->resize(60);
-            $image['resized'] = (string)$catalogImage;
-
+            $image['resized']        = (string)$catalogImage;
             $image['fileSize']       = $fileSize;
             $image['fileSizePretty'] = Mage::helper('pictureperfect')->getPrettySize($fileSize);
-            try {
-                $image['widthHeight'] = Mage::helper('pictureperfect')->getImageWithHeight($catalogImage);
-            } catch (Exception $e) {
-                Mage::logException($e);
-                $image['widthHeight'] = 'error!';
-            }
-
-            $image['label'] = htmlspecialchars($image['label']);
+            $image['widthHeight']    = Mage::helper('pictureperfect')->getImageWithHeight($currentImage);
+            $image['label']          = htmlspecialchars($image['label']);
         }
         return $images;
     }
@@ -250,7 +246,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
     protected function getUploadedFilesNames()
     {
         if (empty($_FILES) || !isset($_FILES['binaryData']) || empty($_FILES['binaryData']) || !is_array($_FILES['binaryData']['name'])) {
-            Mage::log($_FILES);
+            Mage::log(array('getUploadedFilesNames', $_FILES, $_GET, $_POST));
             return Mage::helper('pictureperfect')->__('No file found that should have been uploaded');
         }
 

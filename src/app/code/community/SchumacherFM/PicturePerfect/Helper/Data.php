@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @category    SchumacherFM_PicturePerfect
  * @package     Helper
@@ -78,13 +79,18 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
-     * @param Mage_Catalog_Helper_Image $catalogImage
+     * @param string $absolutePathToImage
      *
      * @return string
      */
-    public function getImageWithHeight(Mage_Catalog_Helper_Image $catalogImage)
+    public function getImageWithHeight($absolutePathToImage)
     {
-        return $catalogImage->getOriginalWidth() . ' x ' . $catalogImage->getOriginalHeight() . 'px';
+        $imageData = @getimagesize($absolutePathToImage);
+        $return    = '';
+        if (FALSE !== $imageData) {
+            $return = $imageData[0] . ' x ' . $imageData[1] . 'px';
+        }
+        return $return;
     }
 
     /**
