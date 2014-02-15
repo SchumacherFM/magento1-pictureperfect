@@ -117,7 +117,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         if (empty($tmpFileNames) || empty($file) || empty($productId) || FALSE === $uniqueFileName) {
             $return['msg'] = $helper->__('Either fileName or binaryData or file or productId is empty ...');
             Mage::log(array(
-                'catalogProductGalleryAction',
+                'catalogProductGalleryAction Failed',
                 $tmpFileNames,
                 $uniqueFileName,
                 $file,
@@ -125,6 +125,8 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             ));
             return $this->_setReturn($return, TRUE);
         }
+
+        Mage::helper('pictureperfect')->getProduct($productId); // init product model in helper
 
         if ($bdReqCount > 1) {
             // multiple req uploads
@@ -152,7 +154,10 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
         // one request but 1 to many files
         if ($bdReqCount === 1) {
             sort($tmpFileNames); // now that is important to restore the order after async upload!
-            $fullImagePath = $helper->mergeAndMove($tmpFileNames, isset($file['name']) ? $file['name'] : uniqid('pp_failed_'));
+            $newFileName   = Mage::helper('pictureperfect')->rewriteFileNameWithProductAttributes(
+                isset($file['name']) ? $file['name'] : uniqid('pp_failed_')
+            );
+            $fullImagePath = $helper->mergeAndMove($tmpFileNames, $newFileName);
 
             if (FALSE === $fullImagePath) {
                 $return['msg'] = $helper->__('Cannot merge and move uploaded file/s!');
@@ -162,7 +167,7 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
             $return['err'] = FALSE;
             $return['msg'] = $helper->__('Upload successful for image: %s', basename($fullImagePath));
             $return['fn']  = basename($fullImagePath);
-            $return        = $this->_addImageToProductGallery($return, $fullImagePath, $productId);
+            $return        = $this->_addImageToProductGallery($return, $fullImagePath);
             return $this->_setReturn($return, TRUE);
         } else {
 
@@ -187,27 +192,22 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
     /**
      * @param array $return
      * @param       $fullImagePath
-     * @param       $productId
      *
      * @return array
      */
-    protected function _addImageToProductGallery(array $return, $fullImagePath, $productId)
+    protected function _addImageToProductGallery(array $return, $fullImagePath)
     {
         /** @var Mage_Catalog_Model_Product $product */
-        $product = Mage::getModel('catalog/product')->load($productId);
-
-//        var_export($fullImagePath);
-//        echo "\n\n";
-//        var_export(getimagesize($fullImagePath));
-//        echo "\n\n";
+        $product = Mage::helper('pictureperfect')->getProduct();
 
         try {
             $product->addImageToMediaGallery($fullImagePath, NULL, TRUE, FALSE);
+            Mage::helper('pictureperfect/label')->generateLabelFromFileName($product, $fullImagePath);
             $product->getResource()->save($product); // bypassing observer
             $return['images'] = $this->_getResizedGalleryImages($product);
         } catch (Exception $e) {
             $return['err'] = TRUE;
-            $return['msg'] = Mage::helper('pictureperfect')->__('Error in saving the image: %s for productId: %s', $fullImagePath, $productId);
+            $return['msg'] = Mage::helper('pictureperfect')->__('Error in saving the image: %s for productId: %s', $fullImagePath, $product->getId());
             Mage::logException($e);
         }
 

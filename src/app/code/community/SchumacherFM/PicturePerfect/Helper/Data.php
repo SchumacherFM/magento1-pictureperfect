@@ -8,7 +8,33 @@
  */
 class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
 {
+    const XML_CONFIG_ENABLE                        = 'catalog/pictureperfect/enable';
+    const XML_CONFIG_LOWERCASE                     = 'catalog/pictureperfect/lowercase';
+    const XML_CONFIG_GENERATE_LABEL                = 'catalog/pictureperfect/generate_label_from_file_name';
+    const XML_CONFIG_FILENAME_TO_LABEL_REPLACEMENT = 'catalog/pictureperfect/filename_to_label_replacement';
+    const XML_CONFIG_REWRITE_FILE_NAME             = 'catalog/pictureperfect/rewrite_file_name';
+    const XML_CONFIG_REWRITE_FILE_NAME_MAP         = 'catalog/pictureperfect/rewrite_file_name_map';
+
     protected $_tempStorage = NULL;
+
+    /**
+     * @var Mage_Catalog_Model_Product
+     */
+    private $_currentProduct = NULL;
+
+    /**
+     * @param int|null $productId
+     *
+     * @return Mage_Catalog_Model_Product
+     */
+    public function getProduct($productId = NULL)
+    {
+        if (NULL === $productId || NULL !== $this->_currentProduct) {
+            return $this->_currentProduct;
+        }
+        $this->_currentProduct = Mage::getModel('catalog/product')->load((int)$productId);
+        return $this->_currentProduct;
+    }
 
     /**
      * @todo if backend check for current selected store view / website
@@ -19,7 +45,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function isDisabled()
     {
-        return !(boolean)Mage::getStoreConfig('pictureperfect/pictureperfect/enable');
+        return !Mage::getStoreConfigFlag(self::XML_CONFIG_ENABLE);
     }
 
     /**
@@ -30,23 +56,6 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     public function getAdminFileUploadUrl(array $params = NULL)
     {
         return Mage::helper('adminhtml')->getUrl('adminhtml/pictureperfect/fileUpload', $params);
-    }
-
-    /**
-     * if json is invalid returns false
-     *
-     * @param string $type
-     *
-     * @return bool|string
-     */
-    protected function _getJsonConfig($type)
-    {
-        $config = trim(Mage::getStoreConfig('pictureperfect/' . $type . '/config'));
-        if (empty($config)) {
-            return FALSE;
-        }
-        $decoded = json_decode($config);
-        return $decoded instanceof stdClass ? rawurlencode($config) : FALSE;
     }
 
     /**
@@ -103,7 +112,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
         if ($this->_tempStorage !== NULL) {
             return $this->_tempStorage;
         }
-        $this->_tempStorage = Mage::getBaseDir() . DS . 'var' . DS . 'pictureperfect' . DS;
+        $this->_tempStorage = Mage::getBaseDir('var') . DS . 'pictureperfect' . DS;
         $io                 = new Varien_Io_File();
         $io->checkAndCreateFolder($this->_tempStorage);
         return $this->_tempStorage;
@@ -184,7 +193,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function mergeAndMove(array $tmpFileNames, $newFileName, $preDeleteTarget = TRUE)
     {
-        $tempStorage = Mage::helper('pictureperfect')->getTempStorage();
+        $tempStorage = $this->getTempStorage();
         $fileName    = preg_replace('~[^\w\.\-_\(\)@#]+~i', '', $newFileName);
 
         if (TRUE === $preDeleteTarget) {
@@ -214,6 +223,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
         }
 
         if (TRUE === $this->_isExecAvailable()) {
+            // binary operation on possible really large files
             $this->_runExec('cat ' . escapeshellarg($source) . ' >> ' . escapeshellarg($target)); // . ' 2>&1'
             @unlink($source);
             return file_exists($target);
@@ -233,7 +243,6 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     protected function _runExec($cmd)
     {
         $result = shell_exec($cmd);
-//        Mage::log([$cmd, $result]);
     }
 
     /**
@@ -249,5 +258,13 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
             $available = !isset($array['shell_exec']);
         }
         return $available;
+    }
+
+    public function rewriteFileNameWithProductAttributes($fileName)
+    {
+        if (FALSE === Mage::getStoreConfigFlag(self::XML_CONFIG_REWRITE_FILE_NAME)) {
+            return $fileName;
+        }
+        // $this->getProduct()
     }
 }

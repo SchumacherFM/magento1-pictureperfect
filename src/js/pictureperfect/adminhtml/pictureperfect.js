@@ -92,16 +92,33 @@
 
         /**
          *
+         * @returns {MassActionGalleryButton._productGrid}
+         */
+        getProductGrid: function () {
+            return this._productGrid;
+        },
+
+        /**
+         *
          * @private
          */
         _initMassActionButton: function () {
             var self = this,
-                button = $$('.picturePerfectMassAction');
+                _initOnScroll = false;
 
-            button.each(function (buttonElement) {
-                // @todo bug, does not trigger then click when content-header-floating is active, AKA scroll down
+            $$('.picturePerfectMassAction').each(function (buttonElement) {
                 buttonElement.observe('click', self._massEventClickLoadGalleryButton.bindAsEventListener(self));
             });
+
+            window.onscroll = function () {
+                if (false === _initOnScroll) {
+                    var btn = $$('.content-header-floating .picturePerfectMassAction');
+                    if (1 === btn.length) {
+                        btn[0].observe('click', self._massEventClickLoadGalleryButton.bindAsEventListener(self));
+                    }
+                    _initOnScroll = true;
+                }
+            };
 
             /**
              * HACK
@@ -110,6 +127,8 @@
              * via ajax and event listeners will be lost. so after an update has been done
              * we assign the new element to the property that the click even can work
              * still buggy ...
+             * @todo 06.02. check again for errors see all element:update code pieces
+             * @todo create config option to use filename as label
              */
             self._productGrid.observe('element:update', function (event) {
                 var target = event.srcElement || event.target;
@@ -393,6 +412,12 @@
             self._initConfig();
             self._initFileReaderOnTableRows();
             var mag = new MassActionGalleryButton(self._globalConfig);
+            mag.getProductGrid().observe('element:update', function (event) {
+                var target = event.srcElement || event.target;
+                if ('productGrid' === target.id) {
+                    self._initFileReaderOnTableRows();
+                }
+            });
         };
     };
 
