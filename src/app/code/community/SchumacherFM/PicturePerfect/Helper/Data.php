@@ -271,7 +271,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
         $gallery = $product->getData('media_gallery');
         return FALSE === is_array($gallery)
             ? $newFileName
-            : $newFileName . '-' . count($gallery['images']);
+            : $newFileName . '-' . count($gallery['images']) * mt_rand(2, 200); // be a little more unique
     }
 
     /**
@@ -319,25 +319,6 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
         $readDir    = $this->getTempStorage();
         $globSearch = $readDir . $uniqueFileNamePrefix . '*.bin';
         $chunkFiles = glob($globSearch, GLOB_NOSORT);
-
-        /*
-        if ($bdTotalFiles === count($chunkFiles)) {
-            $moveToDir = $this->getTempStorage('_merge');
-            if ($this->_isExecAvailable()) {
-                $this->_runExec('mv ' . $globSearch . ' ' . $moveToDir);
-                $chunkFiles = glob($moveToDir . $uniqueFileNamePrefix . '*.bin', GLOB_NOSORT); // get new file location
-            } else {
-                foreach ($chunkFiles as &$file) {
-                    $renamed = rename($file, $moveToDir . basename($file));
-                    if (FALSE === $renamed) {
-                        Mage::log(array('Error: getAlreadyUploadedFileChunks cannot move files', $chunkFiles, $moveToDir));
-                        return array();
-                    }
-                    $file = str_replace($readDir, $moveToDir, $file); // rename files to new dir
-                }
-            }
-        } */
-
         return $chunkFiles;
     }
 

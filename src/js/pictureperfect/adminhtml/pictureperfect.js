@@ -264,7 +264,7 @@
      * @constructor
      */
     function ProgressElement(numOfSteps) {
-
+        this._requestName = null;
         this._$innerDiv = new Element('div', {
             'style': 'background-color: ' + this._getColor(50, numOfSteps)
         });
@@ -328,10 +328,17 @@
             this._progressElement.remove();
             return this;
         },
+        setRequestName: function (name) {
+            this._requestName = name;
+            return this;
+        },
+        getRequestName: function () {
+            return (this._requestName || '') + ' ';
+        },
         interval: function (percentComplete) {
             var percentage = Math.round(percentComplete * 100);
             this._$innerDiv.setStyle({'width': percentage + '%'});
-            this._$innerDiv.update('<div>' + percentage + '%</div>');
+            this._$innerDiv.update('<div>' + this.getRequestName() + percentage + '%</div>');
             return this;
         }
     };
@@ -349,7 +356,6 @@
         self._tableColumnCount = 10;
         self._currentTrIndex = 0;
         self._previousTrIndex = 0;
-        self._activeUploadsForProductId = {};
         self._fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
         return this;
     }
@@ -636,6 +642,20 @@
 
     /**
      *
+     * @param aString
+     * @returns {number}
+     * @private
+     */
+    PicturePerfect.prototype._getIntFromChars = function (aString) {
+        var checkSum = 0;
+        for (var i = 0, len = aString.length; i < len; ++i) {
+            checkSum += aString.charCodeAt(i);
+        }
+        return checkSum;
+    };
+
+    /**
+     *
      * @param args object => event, file, $secondTd, productId
      * @private
      */
@@ -654,11 +674,11 @@
             },
             blobFish = self._getBlob((args.event.target || args.event.srcElement).result, self._getNonBinaryFormLength(postData));
 
-        self._activeUploadsForProductId[args.productId] = true;
         postData.bdReqCount = blobFish.blobber.length; // number of total request made for upload
         postData.bdTotalFiles = blobFish.totalFiles;
         delete args.event;
 
+        args.colorIndex = self._getIntFromChars(args.file.extra.nameNoExtension);
         /**
          * one request and n file/s to post
          */
@@ -678,7 +698,6 @@
                     };
                 });
             }
-//            args.postData = postData;
             self._fileReaderHandleSingleRequest(args).sendPost(postData);
             return this;
         }
@@ -710,7 +729,6 @@
                 xhrObj = self._fileReaderHandleSingleRequest(args);
                 xhrObj.sendPost(postDataCloned);
             });
-
             return this;
         }
 
@@ -738,8 +756,9 @@
 
         var singleReqSelf = this,
             ajaxRequest = {},
-            $progressElement = new ProgressElement(parseInt(Math.random() * 100, 10));
+            $progressElement = new ProgressElement(args.colorIndex);
 
+        $progressElement.setRequestName('ID ' + args.colorIndex);
         args.$secondTd.insert($progressElement.getElement());
 
         function xhrBefore() {
