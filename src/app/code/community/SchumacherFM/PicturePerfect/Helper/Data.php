@@ -23,6 +23,16 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     private $_currentProduct = NULL;
 
     /**
+     * @var int
+     */
+    protected $_newFileNameMaxLength = 200;
+
+    /**
+     * @var string replace white space with that string
+     */
+    protected $_newFileNameWSReplacement = '-';
+
+    /**
      * @param int|null $productId
      *
      * @return Mage_Catalog_Model_Product
@@ -260,11 +270,34 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
         return $available;
     }
 
+    /**
+     * @param $fileName
+     *
+     * @return string
+     */
     public function rewriteFileNameWithProductAttributes($fileName)
     {
         if (FALSE === Mage::getStoreConfigFlag(self::XML_CONFIG_REWRITE_FILE_NAME)) {
             return $fileName;
         }
-        // $this->getProduct()
+        $product = $this->getProduct();
+        $map     = trim(Mage::getStoreConfig(self::XML_CONFIG_REWRITE_FILE_NAME_MAP));
+
+        $rewriteMap = array();
+        foreach ($product->getData() as $attribute => $value) {
+            if (is_string($value) || is_numeric($value)) {
+                $rewriteMap['%' . $attribute] = $value;
+            }
+        }
+        $extension   = Varien_File_Object::getExt($fileName);
+        $newFileName = str_replace(array_keys($rewriteMap), $rewriteMap, $map);
+        $newFileName = trim(preg_replace('~[^0-9a-z_\-@]+~i', $this->_newFileNameWSReplacement, $newFileName), $this->_newFileNameWSReplacement);
+        $newFileName = substr($newFileName, 0, $this->_newFileNameMaxLength) . '.' . $extension;
+
+        if (TRUE === Mage::getStoreConfigFlag(self::XML_CONFIG_LOWERCASE)) {
+            $newFileName = strtolower($newFileName);
+        }
+
+        return $newFileName;
     }
 }

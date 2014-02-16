@@ -128,8 +128,8 @@ class SchumacherFM_PicturePerfect_Adminhtml_PicturePerfectController extends Mag
 
         Mage::helper('pictureperfect')->getProduct($productId); // init product model in helper
 
+        // multiple req uploads
         if ($bdReqCount > 1) {
-            // multiple req uploads
 
             $sessionDataKey = 'ppFileNames' . $uniqueFileName;
             /** @var Mage_Adminhtml_Model_Session $session */
