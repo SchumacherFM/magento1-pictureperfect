@@ -17,7 +17,7 @@ class SchumacherFM_PicturePerfect_Helper_Label extends Mage_Core_Helper_Abstract
         $mediaGallery = $product->getData('media_gallery');
         $lastImage    = count($mediaGallery['images']) - 1;
 
-        $label = $this->convertFileNameToLabel($fileName);
+        $label = $this->_convertFileNameToLabel($fileName);
         if (FALSE !== $label) {
             $mediaGallery['images'][$lastImage]['label'] = $label;
         }
@@ -32,7 +32,7 @@ class SchumacherFM_PicturePerfect_Helper_Label extends Mage_Core_Helper_Abstract
      *
      * @return bool|string
      */
-    public function convertFileNameToLabel($fileName)
+    protected function _convertFileNameToLabel($fileName)
     {
         if (FALSE === Mage::getStoreConfigFlag(SchumacherFM_PicturePerfect_Helper_Data::XML_CONFIG_GENERATE_LABEL)) {
             return FALSE;

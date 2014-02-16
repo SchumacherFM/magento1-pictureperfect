@@ -15,7 +15,7 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_CONFIG_REWRITE_FILE_NAME             = 'catalog/pictureperfect/rewrite_file_name';
     const XML_CONFIG_REWRITE_FILE_NAME_MAP         = 'catalog/pictureperfect/rewrite_file_name_map';
 
-    protected $_tempStorage = NULL;
+    protected $_tempStorages = array();
 
     /**
      * @var Mage_Catalog_Model_Product
@@ -69,63 +69,21 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
-     * @param $file
+     * Images Storage temp root directory
      *
-     * @return int
-     */
-    public function getFileSize($file)
-    {
-        $size = 0;
-        if (file_exists($file)) {
-            $size = filesize($file);
-        }
-        return $size;
-    }
-
-    /**
-     * @param $bytes
+     * @param string $subBaseDir
      *
-     * @return string
+     * @return mixed
      */
-    public function getPrettySize($bytes)
+    public function getTempStorage($subBaseDir = '')
     {
-        if ($bytes < 0.1) {
-            return '';
+        if (isset($this->_tempStorages[$subBaseDir])) {
+            return $this->_tempStorages[$subBaseDir];
         }
-        $s = array('bytes', 'KB', 'MB', 'GB', 'TB', 'PB');
-        $e = floor(log($bytes) / log(1024));
-        return sprintf('%.2f', $bytes / pow(1024, floor($e))) . ' ' . $s[$e];
-    }
-
-    /**
-     * @param string $absolutePathToImage
-     *
-     * @return string
-     */
-    public function getImageWithHeight($absolutePathToImage)
-    {
-        $imageData = @getimagesize($absolutePathToImage);
-        $return    = '';
-        if (FALSE !== $imageData) {
-            $return = $imageData[0] . ' x ' . $imageData[1] . 'px';
-        }
-        return $return;
-    }
-
-    /**
-     * Images Storage root directory
-     *
-     * @return string
-     */
-    public function getTempStorage()
-    {
-        if ($this->_tempStorage !== NULL) {
-            return $this->_tempStorage;
-        }
-        $this->_tempStorage = Mage::getBaseDir('var') . DS . 'pictureperfect' . DS;
-        $io                 = new Varien_Io_File();
-        $io->checkAndCreateFolder($this->_tempStorage);
-        return $this->_tempStorage;
+        $this->_tempStorages[$subBaseDir] = Mage::getBaseDir('var') . DS . 'pictureperfect' . $subBaseDir . DS;
+        $io                               = new Varien_Io_File();
+        $io->checkAndCreateFolder($this->_tempStorages[$subBaseDir]);
+        return $this->_tempStorages[$subBaseDir];
     }
 
     /**
@@ -198,13 +156,15 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
     /**
      * @param array  $tmpFileNames
      * @param string $newFileName
+     * @param bool   $preDeleteTarget
      *
-     * @return string|boolean
+     * @return bool|string
      */
     public function mergeAndMove(array $tmpFileNames, $newFileName, $preDeleteTarget = TRUE)
     {
         $tempStorage = $this->getTempStorage();
         $fileName    = preg_replace('~[^\w\.\-_\(\)@#]+~i', '', $newFileName);
+        Mage::log(['mergeAndMove', $tmpFileNames, $fileName]);
 
         if (TRUE === $preDeleteTarget) {
             @unlink($tempStorage . $fileName); // remove target before starting
@@ -289,15 +249,110 @@ class SchumacherFM_PicturePerfect_Helper_Data extends Mage_Core_Helper_Abstract
                 $rewriteMap['%' . $attribute] = $value;
             }
         }
-        $extension   = Varien_File_Object::getExt($fileName);
+        $extension   = strtolower(Varien_File_Object::getExt($fileName));
         $newFileName = str_replace(array_keys($rewriteMap), $rewriteMap, $map);
         $newFileName = trim(preg_replace('~[^0-9a-z_\-@]+~i', $this->_newFileNameWSReplacement, $newFileName), $this->_newFileNameWSReplacement);
-        $newFileName = substr($newFileName, 0, $this->_newFileNameMaxLength) . '.' . $extension;
+        $newFileName = substr($newFileName, 0, $this->_newFileNameMaxLength);
 
         if (TRUE === Mage::getStoreConfigFlag(self::XML_CONFIG_LOWERCASE)) {
             $newFileName = strtolower($newFileName);
         }
+        return $this->_generateUniqueFileName($newFileName) . '.' . $extension;
+    }
 
-        return $newFileName;
+    /**
+     * @param $newFileName
+     *
+     * @return mixed
+     */
+    protected function _generateUniqueFileName($newFileName)
+    {
+        $product = $this->getProduct();
+        $gallery = $product->getData('media_gallery');
+        return FALSE === is_array($gallery)
+            ? $newFileName
+            : $newFileName . '-' . count($gallery['images']);
+    }
+
+    /**
+     * @return array|string success array and on error a string
+     */
+    public function getUploadedFilesNames()
+    {
+        if (empty($_FILES) || !isset($_FILES['binaryData']) || empty($_FILES['binaryData']) || !is_array($_FILES['binaryData']['name'])) {
+            Mage::log(array('_getUploadedFilesNames', $_FILES, $_GET, $_POST));
+            return $this->__('No file found that should have been uploaded');
+        }
+
+        /**
+         * Varien_File_Uploader cannot handle arrays ... like we are using here
+         */
+        $tempStorage = $this->getTempStorage();
+        $fileNames   = array();
+        foreach ($_FILES['binaryData']['error'] as $index => $error) {
+            if ($error !== UPLOAD_ERR_OK) {
+                return $this->__('An upload error occurred for file: ' . $_FILES['binaryData']['name'][$index]);
+            }
+
+            $res = move_uploaded_file($_FILES['binaryData']['tmp_name'][$index], $tempStorage . $_FILES['binaryData']['name'][$index]);
+            if (FALSE === $res) {
+                return $this->__('An upload error occurred during moving for file: ' . $_FILES['binaryData']['name'][$index]);
+            }
+            $fileNames[] = $tempStorage . $_FILES['binaryData']['name'][$index];
+        } //endForeach
+        return $fileNames;
+    }
+
+    /**
+     * when multiple requests happen this method gets all the finished uploaded files
+     * moves them to a special dir
+     * so we can avoid storing in the users session how many files already have been uploaded
+     * that is maybe a little bit not optimal due to opening DIR and reading
+     *
+     * @param string $uniqueFileNamePrefix
+     * @param int    $bdTotalFiles
+     *
+     * @return array
+     */
+    public function getAlreadyUploadedFileChunks($uniqueFileNamePrefix, $bdTotalFiles)
+    {
+        $readDir    = $this->getTempStorage();
+        $globSearch = $readDir . $uniqueFileNamePrefix . '*.bin';
+        $chunkFiles = glob($globSearch, GLOB_NOSORT);
+
+        /*
+        if ($bdTotalFiles === count($chunkFiles)) {
+            $moveToDir = $this->getTempStorage('_merge');
+            if ($this->_isExecAvailable()) {
+                $this->_runExec('mv ' . $globSearch . ' ' . $moveToDir);
+                $chunkFiles = glob($moveToDir . $uniqueFileNamePrefix . '*.bin', GLOB_NOSORT); // get new file location
+            } else {
+                foreach ($chunkFiles as &$file) {
+                    $renamed = rename($file, $moveToDir . basename($file));
+                    if (FALSE === $renamed) {
+                        Mage::log(array('Error: getAlreadyUploadedFileChunks cannot move files', $chunkFiles, $moveToDir));
+                        return array();
+                    }
+                    $file = str_replace($readDir, $moveToDir, $file); // rename files to new dir
+                }
+            }
+        } */
+
+        return $chunkFiles;
+    }
+
+    /**
+     * extracts the unique part
+     *
+     * @param array $tmpFileNames
+     *
+     * @return string|bool
+     */
+    public function getUploadFileBaseName(array $tmpFileNames)
+    {
+        $file    = current($tmpFileNames);
+        $matches = array();
+        preg_match('~/(pp_[a-z0-9]{5,})__~', $file, $matches);
+        return isset($matches[1]) ? $matches[1] : FALSE;
     }
 }

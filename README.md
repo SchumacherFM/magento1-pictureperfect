@@ -35,6 +35,8 @@ Configuration
 
 All options can be set per store view.
 
+PHP needs shell_exec function if you want to use the split file upload possibility.
+
 Todo
 ----
 

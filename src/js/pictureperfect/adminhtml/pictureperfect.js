@@ -349,6 +349,7 @@
         self._tableColumnCount = 10;
         self._currentTrIndex = 0;
         self._previousTrIndex = 0;
+        self._activeUploadsForProductId = {};
         self._fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
         return this;
     }
@@ -648,10 +649,12 @@
                 'file': JSON.stringify({
                     'name': args.file.name,
                     'extra': args.file.extra
-                })
+                }),
+                'bdReqId': 1
             },
             blobFish = self._getBlob((args.event.target || args.event.srcElement).result, self._getNonBinaryFormLength(postData));
 
+        self._activeUploadsForProductId[args.productId] = true;
         postData.bdReqCount = blobFish.blobber.length; // number of total request made for upload
         postData.bdTotalFiles = blobFish.totalFiles;
         delete args.event;
@@ -682,6 +685,8 @@
 
         /**
          * multiple request with multiple files
+         * setTimeout is necessary because PHP fails to handle multiple request
+         * therefore we need an order
          */
         if (postData.bdReqCount > 1) {
 
@@ -691,6 +696,8 @@
                     xhrObj = {},
                     postDataCloned = Object.clone(postData);
 
+                postDataCloned.bdReqId = reqIndex;
+
                 blobsPerRequest.forEach(function (theBlob, blobIndex) {
                     var blobFileIndex = blobIndex + 1;
 
@@ -699,11 +706,9 @@
                         filename: blobFish.tmpFileName + '__' + partialFileNameReq + '_' + self._numberPad(blobFileIndex) + '.bin'
                     };
                 });
-//                args.postData = postDataCloned;
                 args.tmpFileNamePrefix = blobFish.tmpFileName;
                 xhrObj = self._fileReaderHandleSingleRequest(args);
                 xhrObj.sendPost(postDataCloned);
-
             });
 
             return this;
@@ -711,9 +716,7 @@
 
         console.log('Something went terrible wrong with the blobFish!');
         return this;
-        // handle multiple requests
-
-
+        // handle multiple requests, hmm
     };
 
     /**
