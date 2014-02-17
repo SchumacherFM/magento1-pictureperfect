@@ -356,6 +356,7 @@
         self._tableColumnCount = 10;
         self._currentTrIndex = 0;
         self._previousTrIndex = 0;
+        self._concurrentReqPerProd = {};
         self._fileSlice = window.File.prototype.slice || window.File.prototype.mozSlice || window.File.prototype.webkitSlice;
         return this;
     }
@@ -655,6 +656,23 @@
     };
 
     /**
+     * count the actual amount und parallel running uploads
+     *
+     * @param productId int
+     * @param reqStart int
+     * @returns {PicturePerfect}
+     * @private
+     */
+//    PicturePerfect.prototype._setConcurrentRequestCount = function (productId, reqStart) {
+//        var self = this;
+//        if (!self._concurrentReqPerProd[productId]) {
+//            self._concurrentReqPerProd[productId] = 0;
+//        }
+//        self._concurrentReqPerProd[productId] += reqStart;
+//        return this;
+//    };
+
+    /**
      *
      * @param args object => event, file, $secondTd, productId
      * @private
@@ -678,7 +696,12 @@
         postData.bdTotalFiles = blobFish.totalFiles;
         delete args.event;
 
+        // one unique color per multiple upload
         args.colorIndex = self._getIntFromChars(args.file.extra.nameNoExtension);
+
+//        self._setConcurrentRequestCount(args.productId, 1);
+//        console.log('start: ', self._concurrentReqPerProd[args.productId]);
+
         /**
          * one request and n file/s to post
          */
@@ -748,6 +771,9 @@
     };
 
     /**
+     * @todo race condition bug, when uploading multiple files for one product
+     * not all images will be shown in the tag tip BUT their uploaded successfully
+     * so you have to detect the amount of current active uploading connections
      *
      * @param args object -> postData, file, $secondTd, productId
      * @private
@@ -772,6 +798,7 @@
             try {
                 result = JSON.parse(response.responseText);
             } catch (e) {
+                // special case for singleReqSelf._setConcurren tRequestCount(args.productId, -1, -1);
                 return singleReqSelf._handleError(args.$secondTd, {
                     alert: singleReqSelf.__('An error occurred. Tried to parse JSON response which could not be in JSON format.'),
                     log: [singleReqSelf.__('Invalid responseText in JSON'), e, response]
@@ -779,6 +806,10 @@
             }
 
             if (result && _isObject(result) && undefined === result.fileProgress) {
+
+//                singleReqSelf._setConcurrentRequestCount(args.productId, -1);
+//                console.log('success: ', singleReqSelf._concurrentReqPerProd[args.productId]);
+
                 if (result.err === false) {
                     args.$secondTd.removeClassName('fReaderError');
                     args.$secondTd.addClassName('fReaderSuccess');

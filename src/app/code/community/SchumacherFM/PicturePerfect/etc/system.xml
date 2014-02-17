@@ -67,7 +67,7 @@
                             If empty: Default replacement is underscore to white space.
                             Alternatively you can add an observer to the internal event: picture_perfect_convert_file_name_to_label]]></comment>
                             <depends>
-                                <generate_label>1</generate_label>
+                                <generate_label_from_file_name>1</generate_label_from_file_name>
                             </depends>
                         </filename_to_label_replacement>
 
