@@ -8,60 +8,101 @@
 -->
 <config>
     <sections>
-        <pictureperfect>
-            <label>PicturePerfect</label>
-            <tab>general</tab>
-            <frontend_type>text</frontend_type>
-            <sort_order>2001</sort_order>
-            <show_in_default>1</show_in_default>
-            <show_in_website>1</show_in_website>
+        <catalog>
             <show_in_store>1</show_in_store>
-
             <groups>
                 <pictureperfect translate="label">
-                    <label>PicturePerfect [M↓]</label>
+                    <label>PicturePerfect [@SchumacherFM Extension]</label>
                     <frontend_type>text</frontend_type>
-                    <sort_order>50</sort_order>
+                    <sort_order>601</sort_order>
                     <show_in_default>1</show_in_default>
                     <show_in_website>1</show_in_website>
                     <show_in_store>1</show_in_store>
                     <fields>
-                        <enable translate="label">
+                        <enable translate="label" module="pictureperfect">
                             <label>Enable PicturePerfect</label>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>10</sort_order>
+                            <sort_order>100</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </enable>
 
-                    </fields>
-                </pictureperfect>
-
-                <file_reader translate="label">
-                    <label>Drag'n'Drop File Upload</label>
-                    <frontend_type>text</frontend_type>
-                    <sort_order>70</sort_order>
-                    <show_in_default>1</show_in_default>
-                    <show_in_website>1</show_in_website>
-                    <show_in_store>1</show_in_store>
-                    <fields>
-                        <upload_dir translate="label">
-                            <label>Upload directory</label>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>100</sort_order>
+                        <lowercase translate="label" module="pictureperfect">
+                            <label>Lowercase image file names</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>200</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
-                            <comment><![CDATA[Directory must be writable for the webserver. If directory did not exists system will
-                             attempt to create it recursively. Please add trailing slash.
-                             Default upload directory is media/wysiwyg/pictureperfect/]]></comment>
-                        </upload_dir>
+                            <depends>
+                                <enable>1</enable>
+                            </depends>
+                        </lowercase>
+
+                        <generate_label_from_file_name translate="label comment" module="pictureperfect">
+                            <label>Generate label from image file name</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>300</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Select "Yes" to configure.</comment>
+                            <depends>
+                                <enable>1</enable>
+                            </depends>
+                        </generate_label_from_file_name>
+
+                        <filename_to_label_replacement translate="label comment" module="pictureperfect">
+                            <label>Replace these characters with a white space</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>310</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment><![CDATA[List here all characters in the image file name which can be converted into a white space.
+                            If empty: Default replacement is underscore to white space.
+                            Alternatively you can add an observer to the internal event: picture_perfect_convert_file_name_to_label]]></comment>
+                            <depends>
+                                <generate_label_from_file_name>1</generate_label_from_file_name>
+                            </depends>
+                        </filename_to_label_replacement>
+
+                        <rewrite_file_name translate="label comment" module="pictureperfect">
+                            <label>Rewrite file name</label>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>400</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Select "Yes" to configure.</comment>
+                            <depends>
+                                <enable>1</enable>
+                            </depends>
+                        </rewrite_file_name>
+
+                        <rewrite_file_name_map translate="label comment" module="pictureperfect">
+                            <label>File Name Map</label>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>420</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                            <comment>Use %attribute to include an attribute value in the image file name, e.g. %sku.
+                            Alternatively you can add an observer to the internal event: picture_perfect_rewrite_file_name</comment>
+                            <depends>
+                                <rewrite_file_name>1</rewrite_file_name>
+                            </depends>
+                        </rewrite_file_name_map>
+
                     </fields>
-                </file_reader>
+                </pictureperfect>
 
             </groups>
-        </pictureperfect>
+        </catalog>
     </sections>
 </config>

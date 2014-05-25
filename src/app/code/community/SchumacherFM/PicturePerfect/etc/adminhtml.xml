@@ -16,7 +16,7 @@
    						<children>
    							<config>
    								<children>
-   									<pictureperfect translate="title" module="schumacherfm_pictureperfect">
+   									<pictureperfect translate="title" module="pictureperfect">
    										<title>PicturePerfect</title>
    									</pictureperfect>
    								</children>

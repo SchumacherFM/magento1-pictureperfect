@@ -3,6 +3,9 @@
  A lightweight wrapper for common FileReader usage.
  Copyright 2012 Brian Grinstead - MIT License.
  See http://github.com/bgrins/filereader.js for documentation.
+
+ added drag* events @SchumacherFM
+
  */
 
 (function (window, document) {
@@ -23,7 +26,7 @@
         opts: {
             dragClass: "drag",
             accept: false,
-            readAsDefault: 'BinaryString',
+            readAsDefault: 'ArrayBuffer',
             readAsMap: {
                 'image/*': 'DataURL',
                 'text/*': 'Text'
@@ -38,7 +41,10 @@
                 skip: noop,
                 groupstart: noop,
                 groupend: noop,
-                beforestart: noop
+                beforestart: noop,
+                dragenter: noop,
+                dragleave: noop,
+                dragover: noop
             }
         }
     };
@@ -175,10 +181,11 @@
         var dragClass = instanceOptions.dragClass;
         var initializedOnBody = false;
 
-        // Bind drag events to the dropbox to add the class while dragging, and accept the drop data transfer.
         dropbox.addEventListener("dragenter", onlyWithFiles(dragenter), false);
         dropbox.addEventListener("dragleave", onlyWithFiles(dragleave), false);
         dropbox.addEventListener("dragover", onlyWithFiles(dragover), false);
+
+        // Bind drag events to the dropbox to add the class while dragging, and accept the drop data transfer.
         dropbox.addEventListener("drop", onlyWithFiles(drop), false);
 
         // Bind to body to prevent the dropbox events from firing when it was initialized on the page.
@@ -224,12 +231,14 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
+            instanceOptions.on.dragenter(e);
         }
 
         function dragleave(e) {
             if (dragClass) {
                 removeClass(dropbox, dragClass);
             }
+            instanceOptions.on.dragleave(e);
         }
 
         function dragover(e) {
@@ -238,6 +247,7 @@
             if (dragClass) {
                 addClass(dropbox, dragClass);
             }
+            instanceOptions.on.dragover(e);
         }
     }
 

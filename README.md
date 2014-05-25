@@ -1,28 +1,54 @@
 Magento PicturePerfect Module
 =============================
 
-PicturePerfect is a cool tool.
+PicturePerfect enables the Magento backend user to asynchronously upload multiple photos for different products via drag and drop.
+
+PicturePerfect bypasses all PHP based file upload limitations. The only limit is the speed and performance of your computer and of course
+the upload rate of your internet connection.
 
 Why do I need this?
 -------------------
 
-Simplify the upload process of photos.
+Asynchronous upload of multiple photos for multiple products via drag and drop.
+
+See the screencast:
+
+youtube.com Url ...
+
+Compatibility
+-------------
+
+| Browser | Minimum Version |
+| --------|-----------------|
+| Internet Explorer | 10 |
+| Firefox | 23 |
+| Chrome | 29 |
+| Safari | 6 |
+| Opera | 17 |
+
+- File API [http://caniuse.com/#feat=fileapi](http://caniuse.com/#feat=fileapi)
+- Progress Tag [http://caniuse.com/#feat=progressmeter](http://caniuse.com/#feat=progressmeter)
+
 
 Configuration
 -------------
 
 All options can be set per store view.
 
-#### How to integrate pictureperfect into my module?
-
-...
+PHP needs shell_exec function if you want to use the split file upload possibility.
 
 Todo
 ----
 
-- For version 3.0 replace the EpicEditor with StackEdit
-- For version 4.0 parallel support for Magento2
-- For version 5.0 drop Magento1 support
+- Upload images to a CDN via ftp/sftp/ssh
+- Product Detail Edit: add uploader either in its own tab or via a tiny field on top.
+
+Competitors
+-----------
+
+- Activo [Bulk Images Upload and SEO for Large Catalogs](http://www.magentocommerce.com/magento-connect/bulk-images-upload-and-seo-for-large-catalogs.html)
+- Amasty [AJAX Image Uploader](http://amasty.com/ajax-image-uploader.html)
+
 
 Installation Instructions
 -------------------------
@@ -31,7 +57,8 @@ Installation Instructions
 3. `modman init`
 4. `modman clone git://github.com/SchumacherFM/Magento-PicturePerfect.git`
 
-Please read the great article from Vinai: [Composer installation](http://magebase.com/magento-tutorials/composer-with-magento/)
+Composer based installation:  Please read the great article from
+Vinai [Composer installation](http://magebase.com/magento-tutorials/composer-with-magento/)
 
 About
 -----
