@@ -1,7 +1,7 @@
 Magento PicturePerfect Module
 =============================
 
-PicturePerfect enables the Magento backend user to asynchronously upload multiple photos for different products via drag and drop.
+PicturePerfect enables the Magento backend user to asynchronously upload multiple photos for different products via drag and drop in the backend catalog product grid.
 
 PicturePerfect bypasses all PHP based file upload limitations. The only limit is the speed and performance of your computer and of course
 the upload rate of your internet connection.
@@ -9,7 +9,7 @@ the upload rate of your internet connection.
 Why do I need this?
 -------------------
 
-Asynchronous upload of multiple photos for multiple products via drag and drop.
+Asynchronous upload of multiple photos for multiple products via drag and drop in the backend catalog product grid.
 
 See the screencast:
 
@@ -92,12 +92,12 @@ Instead of forking I can add you as a Collaborator IF you really intend to devel
 
 We work with: [A successful Git branching model](http://nvie.com/posts/a-successful-git-branching-model/) and [Semantic Versioning 2.0.0](http://semver.org/)
 
-Licence BSD-3-Clause
---------------------
+Licence
+-------
 
-#### Magento PicturePerfect Implementation
+[OSL - Open Software Licence 3.0](http://opensource.org/licenses/osl-3.0.php)
 
-Copyright (c) 2013 Cyrill (at) Schumacher dot fm
+Copyright (c) 2013-2016 Cyrill (at) Schumacher dot fm
 
 All rights reserved.
 

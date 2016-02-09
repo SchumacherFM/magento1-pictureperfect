@@ -1,7 +1,7 @@
 {
     "name": "schumacherfm/pictureperfect",
     "type": "magento-module",
-    "license": "BSD-3-Clause",
+     "license": "OSL-3",
     "homepage": "https://github.com/SchumacherFM/Magento-PicturePerfect",
     "description": "PicturePerfect is a",
     "authors": [
