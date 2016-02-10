@@ -13,7 +13,7 @@ Asynchronous upload of multiple photos for multiple products via drag and drop i
 
 See the screencast:
 
-youtube.com Url ...
+![Screencapture GIF](https://raw.githubusercontent.com/SchumacherFM/magento1-pictureperfect/master/logo/screencastpictureperfect.gif)
 
 Compatibility
 -------------
