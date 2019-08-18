@@ -606,7 +606,7 @@
         numberOfFiles = Math.ceil(blobFish.size / self._globalConfig.post.uploadMaxFileSize);
 
         for (fi = 0; fi < numberOfFiles; fi = fi + 1) {
-            blobSlicedContainer.push(self._fileSlice.call(newBlob, fsStart, fsEnd));
+            blobSlicedContainer.push(self._fileSlice.call(newBlob, fsStart, fsEnd, 'image/jpg'));
             fsStart = fsEnd;
             fsEnd = fsStart + self._globalConfig.post.uploadMaxFileSize;
         }
@@ -617,7 +617,7 @@
         maxFilesPerReq = numberOfFilesAllowedPerReq < self._globalConfig.post.maxFileUploads
             ? numberOfFilesAllowedPerReq
             : self._globalConfig.post.maxFileUploads;
-        blobFish.blobber = blobSlicedContainer.eachSlice(maxFilesPerReq);
+        blobFish.blobber = new Array(blobSlicedContainer.eachSlice(maxFilesPerReq));
         blobFish.totalFiles = numberOfFiles;
         return blobFish;
     };
